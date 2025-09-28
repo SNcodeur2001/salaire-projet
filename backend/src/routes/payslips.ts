@@ -7,6 +7,9 @@ const router: Router = express.Router();
 // All routes require authentication
 router.use(requireAuth);
 
+// Get all payslips
+router.get('/', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payslipController.getPayslips.bind(payslipController));
+
 // Get payslip by id
 router.get('/:id', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payslipController.getPayslip.bind(payslipController));
 

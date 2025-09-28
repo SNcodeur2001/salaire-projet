@@ -4,6 +4,10 @@ import payslipRepository from '../repositories/payslipRepository.js';
 const prisma = new PrismaClient();
 
 export class PayslipService {
+  async getAllPayslips(entrepriseId: string) {
+    return await payslipRepository.findAllByEntreprise(entrepriseId);
+  }
+
   async getPayslipById(id: string, entrepriseId: string) {
     const payslip = await payslipRepository.findById(id, entrepriseId);
     if (!payslip) {

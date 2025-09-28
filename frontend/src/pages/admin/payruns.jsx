@@ -1,5 +1,9 @@
 import * as React from "react"
 import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,12 +42,22 @@ import {
 } from "@/components/ui/select"
 
 const AdminPayruns = () => {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
+  // Fetch payruns
+  const { data: payrunsData = [], isLoading, error } = useQuery({
+    queryKey: ['payruns', user?.entrepriseId],
+    queryFn: () => apiClient.getPayruns({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
+
   const columns = [
     {
-      key: 'name',
+      key: 'period',
       title: 'Cycle de Paie',
       render: (value, row) => (
         <div className="flex items-center space-x-3">
@@ -54,43 +68,51 @@ const AdminPayruns = () => {
             <p className="font-medium">{value}</p>
             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
               <Calendar className="h-3 w-3" />
-              <span>{row.period}</span>
+              <span>{new Date(row.createdAt).toLocaleDateString('fr-FR')}</span>
             </div>
           </div>
         </div>
       )
     },
     {
-      key: 'employees',
-      title: 'Employés',
+      key: 'payslips',
+      title: 'Bulletins',
       render: (value) => (
         <div className="flex items-center space-x-1">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{value}</span>
+          <span className="font-medium">{value?.length || 0}</span>
         </div>
       )
     },
     {
       key: 'totalAmount',
       title: 'Montant Total',
-      render: (value) => (
-        <div className="flex items-center space-x-1">
-          <Euro className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold">€{value.toLocaleString()}</span>
-        </div>
-      )
+      render: (value, row) => {
+        const total = row.payslips?.reduce((sum, payslip) => sum + (payslip.grossSalary || 0), 0) || 0;
+        return (
+          <div className="flex items-center space-x-1">
+            <Euro className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">€{total.toLocaleString()}</span>
+          </div>
+        );
+      }
     },
     {
       key: 'progress',
       title: 'Progression',
-      render: (value, row) => (
-        <div className="space-y-2 min-w-[120px]">
-          <Progress value={value} className="h-2" />
-          <p className="text-xs text-muted-foreground">
-            {row.generated}/{row.employees} bulletins
-          </p>
-        </div>
-      )
+      render: (value, row) => {
+        const total = row.payslips?.length || 0;
+        const paid = row.payslips?.filter(p => p.status === 'PAYE').length || 0;
+        const progress = total > 0 ? (paid / total) * 100 : 0;
+        return (
+          <div className="space-y-2 min-w-[120px]">
+            <Progress value={progress} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              {paid}/{total} payés
+            </p>
+          </div>
+        );
+      }
     },
     {
       key: 'status',
@@ -98,17 +120,17 @@ const AdminPayruns = () => {
       render: (value) => (
         <Badge
           variant={
-            value === 'completed' ? 'default' :
-            value === 'in_progress' ? 'secondary' :
-            value === 'draft' ? 'outline' :
+            value === 'CLOS' ? 'default' :
+            value === 'APPROUVE' ? 'secondary' :
+            value === 'BROUILLON' ? 'outline' :
             'destructive'
           }
         >
-          {value === 'completed' ? (
+          {value === 'CLOS' ? (
             <><CheckCircle className="mr-1 h-3 w-3" />Terminé</>
-          ) : value === 'in_progress' ? (
+          ) : value === 'APPROUVE' ? (
             <><Clock className="mr-1 h-3 w-3" />En cours</>
-          ) : value === 'draft' ? (
+          ) : value === 'BROUILLON' ? (
             <><Edit className="mr-1 h-3 w-3" />Brouillon</>
           ) : (
             <><AlertCircle className="mr-1 h-3 w-3" />Erreur</>
@@ -131,7 +153,7 @@ const AdminPayruns = () => {
               <Eye className="mr-2 h-4 w-4" />
               Voir détails
             </DropdownMenuItem>
-            {row.status === 'draft' && (
+            {row.status === 'BROUILLON' && (
               <DropdownMenuItem>
                 <Play className="mr-2 h-4 w-4" />
                 Lancer le cycle
@@ -152,84 +174,10 @@ const AdminPayruns = () => {
     }
   ]
 
-  const payrunsData = [
-    {
-      name: 'Paie Février 2024',
-      period: '01/02/2024 - 29/02/2024',
-      employees: 128,
-      generated: 124,
-      totalAmount: 285400,
-      progress: 97,
-      status: 'in_progress'
-    },
-    {
-      name: 'Paie Janvier 2024',
-      period: '01/01/2024 - 31/01/2024',
-      employees: 125,
-      generated: 125,
-      totalAmount: 278900,
-      progress: 100,
-      status: 'completed'
-    },
-    {
-      name: 'Paie Décembre 2023',
-      period: '01/12/2023 - 31/12/2023',
-      employees: 123,
-      generated: 123,
-      totalAmount: 295600,
-      progress: 100,
-      status: 'completed'
-    },
-    {
-      name: 'Prime Fin d\'Année 2023',
-      period: '15/12/2023 - 15/12/2023',
-      employees: 123,
-      generated: 123,
-      totalAmount: 185000,
-      progress: 100,
-      status: 'completed'
-    },
-    {
-      name: 'Paie Novembre 2023',
-      period: '01/11/2023 - 30/11/2023',
-      employees: 121,
-      generated: 121,
-      totalAmount: 267800,
-      progress: 100,
-      status: 'completed'
-    },
-    {
-      name: 'Paie Mars 2024',
-      period: '01/03/2024 - 31/03/2024',
-      employees: 130,
-      generated: 0,
-      totalAmount: 0,
-      progress: 0,
-      status: 'draft'
-    },
-    {
-      name: '13ème Mois 2023',
-      period: '31/12/2023 - 31/12/2023',
-      employees: 89,
-      generated: 89,
-      totalAmount: 156700,
-      progress: 100,
-      status: 'completed'
-    },
-    {
-      name: 'Paie Octobre 2023',
-      period: '01/10/2023 - 31/10/2023',
-      employees: 119,
-      generated: 0,
-      totalAmount: 0,
-      progress: 0,
-      status: 'error'
-    }
-  ]
+
 
   const filteredData = payrunsData.filter(payrun => {
-    const matchesSearch = payrun.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payrun.period.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = payrun.period.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus = statusFilter === "all" || payrun.status === statusFilter
 
@@ -238,12 +186,15 @@ const AdminPayruns = () => {
 
   const stats = {
     total: payrunsData.length,
-    draft: payrunsData.filter(p => p.status === 'draft').length,
-    inProgress: payrunsData.filter(p => p.status === 'in_progress').length,
-    completed: payrunsData.filter(p => p.status === 'completed').length,
+    draft: payrunsData.filter(p => p.status === 'BROUILLON').length,
+    inProgress: payrunsData.filter(p => p.status === 'APPROUVE').length,
+    completed: payrunsData.filter(p => p.status === 'CLOS').length,
     totalPaid: payrunsData
-      .filter(p => p.status === 'completed')
-      .reduce((sum, p) => sum + p.totalAmount, 0)
+      .filter(p => p.status === 'CLOS')
+      .reduce((sum, p) => {
+        const payrunTotal = p.payslips?.reduce((payrunSum, payslip) => payrunSum + (payslip.grossSalary || 0), 0) || 0;
+        return sum + payrunTotal;
+      }, 0)
   }
 
   return (
@@ -320,70 +271,7 @@ const AdminPayruns = () => {
         </Card>
       </div>
 
-      {/* Current Payrun Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-warning" />
-            <span>Cycle Actuel - Février 2024</span>
-          </CardTitle>
-          <CardDescription>
-            Statut en temps réel du cycle de paie en cours
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Bulletins générés</span>
-                <span className="text-sm text-muted-foreground">124/128</span>
-              </div>
-              <Progress value={97} className="h-3" />
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Validations</span>
-                <span className="text-sm text-muted-foreground">98/124</span>
-              </div>
-              <Progress value={79} className="h-3" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Paiements</span>
-                <span className="text-sm text-muted-foreground">85/124</span>
-              </div>
-              <Progress value={69} className="h-3" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mt-6 pt-4 border-t">
-            <div className="flex items-center space-x-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold">€285,400</p>
-                <p className="text-sm text-muted-foreground">Montant total</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-success">€268,750</p>
-                <p className="text-sm text-muted-foreground">Déjà versé</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-warning">€16,650</p>
-                <p className="text-sm text-muted-foreground">Restant</p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                Voir détails
-              </Button>
-              <Button variant="default">
-                Finaliser le cycle
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Search and Filters */}
       <Card>
@@ -411,21 +299,30 @@ const AdminPayruns = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="draft">Brouillons</SelectItem>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="completed">Terminés</SelectItem>
-                  <SelectItem value="error">Erreurs</SelectItem>
+                  <SelectItem value="BROUILLON">Brouillons</SelectItem>
+                  <SelectItem value="APPROUVE">En cours</SelectItem>
+                  <SelectItem value="CLOS">Terminés</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            emptyMessage="Aucun cycle de paie trouvé"
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-muted-foreground">Chargement...</div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-destructive">Erreur lors du chargement des données</div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              emptyMessage="Aucun cycle de paie trouvé"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

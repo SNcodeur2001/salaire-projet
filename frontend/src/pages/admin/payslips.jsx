@@ -1,5 +1,8 @@
 import * as React from "react"
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,9 +40,17 @@ import {
 } from "@/components/ui/select"
 
 const AdminPayslips = () => {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [monthFilter, setMonthFilter] = useState("all")
+
+  // Fetch payslips
+  const { data: payslipsData = [], isLoading, error } = useQuery({
+    queryKey: ['payslips', user?.entrepriseId],
+    queryFn: () => apiClient.getPayslips({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
 
   const columns = [
     {
@@ -48,22 +59,22 @@ const AdminPayslips = () => {
       render: (value, row) => (
         <div className="flex items-center space-x-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            {row.employee.firstName[0] + row.employee.lastName[0]}
           </div>
           <div>
-            <p className="font-medium">{value}</p>
-            <p className="text-sm text-muted-foreground">{row.position}</p>
+            <p className="font-medium">{row.employee.firstName} {row.employee.lastName}</p>
+            <p className="text-sm text-muted-foreground">{row.employee.position}</p>
           </div>
         </div>
       )
     },
     {
-      key: 'period',
+      key: 'cycle',
       title: 'Période',
-      render: (value) => (
+      render: (value, row) => (
         <div className="flex items-center space-x-1">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
+          <span className="text-sm">{row.cycle.period}</span>
         </div>
       )
     },
@@ -95,19 +106,19 @@ const AdminPayslips = () => {
       )
     },
     {
-      key: 'paymentStatus',
+      key: 'status',
       title: 'Paiement',
       render: (value) => (
         <Badge
           variant={
-            value === 'paid' ? 'default' :
-            value === 'pending' ? 'secondary' :
+            value === 'PAYE' ? 'default' :
+            value === 'EN_ATTENTE' ? 'secondary' :
             'destructive'
           }
         >
-          {value === 'paid' ? (
+          {value === 'PAYE' ? (
             <><CheckCircle className="mr-1 h-3 w-3" />Payé</>
-          ) : value === 'pending' ? (
+          ) : value === 'EN_ATTENTE' ? (
             <><Clock className="mr-1 h-3 w-3" />En attente</>
           ) : (
             <><AlertCircle className="mr-1 h-3 w-3" />Erreur</>
@@ -153,147 +164,27 @@ const AdminPayslips = () => {
     }
   ]
 
-  const payslipsData = [
-    {
-      employee: 'Marie Dubois',
-      position: 'Développeuse Senior',
-      period: 'Février 2024',
-      grossSalary: 4500,
-      deductions: 1080,
-      netSalary: 3420,
-      paymentStatus: 'paid',
-      paymentDate: '2024-03-01'
-    },
-    {
-      employee: 'Pierre Martin',
-      position: 'Chef de Projet',
-      period: 'Février 2024',
-      grossSalary: 5200,
-      deductions: 1300,
-      netSalary: 3900,
-      paymentStatus: 'paid',
-      paymentDate: '2024-03-01'
-    },
-    {
-      employee: 'Sophie Leroy',
-      position: 'Designer UX/UI',
-      period: 'Février 2024',
-      grossSalary: 3800,
-      deductions: 850,
-      netSalary: 2950,
-      paymentStatus: 'pending',
-      paymentDate: null
-    },
-    {
-      employee: 'Jean Moreau',
-      position: 'Développeur Junior',
-      period: 'Février 2024',
-      grossSalary: 2800,
-      deductions: 520,
-      netSalary: 2280,
-      paymentStatus: 'pending',
-      paymentDate: null
-    },
-    {
-      employee: 'Claire Bernard',
-      position: 'Analyste Business',
-      period: 'Février 2024',
-      grossSalary: 4200,
-      deductions: 1000,
-      netSalary: 3200,
-      paymentStatus: 'paid',
-      paymentDate: '2024-03-01'
-    },
-    {
-      employee: 'Nicolas Petit',
-      position: 'DevOps Engineer',
-      period: 'Février 2024',
-      grossSalary: 4800,
-      deductions: 1150,
-      netSalary: 3650,
-      paymentStatus: 'paid',
-      paymentDate: '2024-03-01'
-    },
-    {
-      employee: 'Marie Dubois',
-      position: 'Développeuse Senior',
-      period: 'Janvier 2024',
-      grossSalary: 4500,
-      deductions: 1080,
-      netSalary: 3420,
-      paymentStatus: 'paid',
-      paymentDate: '2024-02-01'
-    },
-    {
-      employee: 'Pierre Martin',
-      position: 'Chef de Projet',
-      period: 'Janvier 2024',
-      grossSalary: 5200,
-      deductions: 1300,
-      netSalary: 3900,
-      paymentStatus: 'paid',
-      paymentDate: '2024-02-01'
-    },
-    {
-      employee: 'Isabelle Roux',
-      position: 'Responsable RH',
-      period: 'Février 2024',
-      grossSalary: 5500,
-      deductions: 1320,
-      netSalary: 4180,
-      paymentStatus: 'paid',
-      paymentDate: '2024-03-01'
-    },
-    {
-      employee: 'Thomas Garcia',
-      position: 'Stagiaire Marketing',
-      period: 'Février 2024',
-      grossSalary: 600,
-      deductions: 85,
-      netSalary: 515,
-      paymentStatus: 'pending',
-      paymentDate: null
-    },
-    {
-      employee: 'Émilie Laurent',
-      position: 'Comptable',
-      period: 'Février 2024',
-      grossSalary: 3200,
-      deductions: 750,
-      netSalary: 2450,
-      paymentStatus: 'error',
-      paymentDate: null
-    },
-    {
-      employee: 'Julien Simon',
-      position: 'Support Technique',
-      period: 'Février 2024',
-      grossSalary: 2500,
-      deductions: 480,
-      netSalary: 2020,
-      paymentStatus: 'pending',
-      paymentDate: null
-    }
-  ]
+
 
   const filteredData = payslipsData.filter(payslip => {
-    const matchesSearch = payslip.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payslip.position.toLowerCase().includes(searchTerm.toLowerCase())
+    const employeeName = `${payslip.employee.firstName} ${payslip.employee.lastName}`.toLowerCase()
+    const matchesSearch = employeeName.includes(searchTerm.toLowerCase()) ||
+                         payslip.employee.position.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || payslip.paymentStatus === statusFilter
-    const matchesMonth = monthFilter === "all" || payslip.period.toLowerCase().includes(monthFilter.toLowerCase())
+    const matchesStatus = statusFilter === "all" || payslip.status === statusFilter
+    const matchesMonth = monthFilter === "all" || payslip.cycle.period.toLowerCase().includes(monthFilter.toLowerCase())
 
     return matchesSearch && matchesStatus && matchesMonth
   })
 
   const stats = {
     total: payslipsData.length,
-    paid: payslipsData.filter(p => p.paymentStatus === 'paid').length,
-    pending: payslipsData.filter(p => p.paymentStatus === 'pending').length,
-    error: payslipsData.filter(p => p.paymentStatus === 'error').length,
-    totalGross: payslipsData.reduce((sum, p) => sum + p.grossSalary, 0),
-    totalNet: payslipsData.reduce((sum, p) => sum + p.netSalary, 0),
-    totalDeductions: payslipsData.reduce((sum, p) => sum + p.deductions, 0)
+    paid: payslipsData.filter(p => p.status === 'PAYE').length,
+    pending: payslipsData.filter(p => p.status === 'EN_ATTENTE').length,
+    error: payslipsData.filter(p => p.status !== 'PAYE' && p.status !== 'EN_ATTENTE').length,
+    totalGross: payslipsData.reduce((sum, p) => sum + (p.grossSalary || 0), 0),
+    totalNet: payslipsData.reduce((sum, p) => sum + (p.netSalary || 0), 0),
+    totalDeductions: payslipsData.reduce((sum, p) => sum + (p.deductions || 0), 0)
   }
 
   return (
@@ -434,9 +325,8 @@ const AdminPayslips = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="paid">Payés</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="error">Erreurs</SelectItem>
+                  <SelectItem value="PAYE">Payés</SelectItem>
+                  <SelectItem value="EN_ATTENTE">En attente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -447,6 +337,8 @@ const AdminPayslips = () => {
             columns={columns}
             data={filteredData}
             emptyMessage="Aucun bulletin de paie trouvé"
+            loading={isLoading}
+            error={error}
           />
         </CardContent>
       </Card>

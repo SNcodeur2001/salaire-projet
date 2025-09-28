@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Building2, Users, UserCheck, TrendingUp, Plus, MoreHorizontal } from "lucide-react"
 
 const SuperAdminDashboard = () => {
-  // Mock data
+  // Mock data - Employees KPI removed as per requirements
   const kpiData = [
     {
       title: "Entreprises Actives",
@@ -21,13 +21,6 @@ const SuperAdminDashboard = () => {
       subtitle: "administrateurs & caissiers",
       icon: Users,
       trend: { value: 8, label: "nouveaux" }
-    },
-    {
-      title: "Employés Gérés",
-      value: "2,847",
-      subtitle: "tous secteurs",
-      icon: UserCheck,
-      trend: { value: 15, label: "progression" }
     },
     {
       title: "Volume Traité",
@@ -87,7 +80,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {kpiData.map((kpi, index) => (
           <KPICard key={index} {...kpi} />
         ))}

@@ -1,4 +1,7 @@
 import * as React from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
 import { KPICard } from "@/components/ui/kpi-card"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
@@ -18,37 +21,80 @@ import {
 import { Progress } from "@/components/ui/progress"
 
 const AdminDashboard = () => {
-  // Mock data
-  const kpiData = [
-    {
-      title: "Masse Salariale",
-      value: "€285,400",
-      subtitle: "ce mois",
-      icon: Euro,
-      trend: { value: 5, label: "vs mois dernier" }
-    },
-    {
-      title: "Employés Actifs",
-      value: "128",
-      subtitle: "contrats en cours",
-      icon: Users,
-      trend: { value: 3, label: "nouveaux" }
-    },
-    {
-      title: "Bulletins Générés",
-      value: "124",
-      subtitle: "sur 128 employés",
-      icon: Calculator,
-      trend: { value: 96, label: "96% complété" }
-    },
-    {
-      title: "Montant Payé",
-      value: "€268,750",
-      subtitle: "reste €16,650",
-      icon: TrendingUp,
-      trend: { value: 94, label: "94% versé" }
-    }
-  ]
+  const { user } = useAuth()
+
+  // Fetch employees
+  const { data: employeesData = [], isLoading: employeesLoading } = useQuery({
+    queryKey: ['employees', user?.entrepriseId],
+    queryFn: () => apiClient.getEmployees({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
+
+  // Fetch payruns
+  const { data: payrunsData = [], isLoading: payrunsLoading } = useQuery({
+    queryKey: ['payruns', user?.entrepriseId],
+    queryFn: () => apiClient.getPayruns({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
+
+  // Fetch payslips
+  const { data: payslipsData = [], isLoading: payslipsLoading } = useQuery({
+    queryKey: ['payslips', user?.entrepriseId],
+    queryFn: () => apiClient.getPayslips({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
+
+  // Calculate KPIs from real data
+  const kpiData = React.useMemo(() => {
+    const totalEmployees = employeesData.length
+    const totalGross = payslipsData.reduce((sum, p) => sum + (p.grossSalary || 0), 0)
+    const totalNet = payslipsData.reduce((sum, p) => sum + (p.netSalary || 0), 0)
+    const paidPayslips = payslipsData.filter(p => p.status === 'PAYE').length
+    const totalPayslips = payslipsData.length
+
+    return [
+      {
+        title: "Masse Salariale",
+        value: `€${totalGross.toLocaleString()}`,
+        subtitle: "ce mois",
+        icon: Euro,
+        trend: { value: 5, label: "vs mois dernier" }
+      },
+      {
+        title: "Employés Actifs",
+        value: totalEmployees.toString(),
+        subtitle: "contrats en cours",
+        icon: Users,
+        trend: { value: 3, label: "nouveaux" }
+      },
+      {
+        title: "Bulletins Générés",
+        value: totalPayslips.toString(),
+        subtitle: `sur ${totalEmployees} employés`,
+        icon: Calculator,
+        trend: { value: totalEmployees > 0 ? Math.round((totalPayslips / totalEmployees) * 100) : 0, label: `${totalEmployees > 0 ? Math.round((totalPayslips / totalEmployees) * 100) : 0}% complété` }
+      },
+      {
+        title: "Montant Payé",
+        value: `€${totalNet.toLocaleString()}`,
+        subtitle: `${paidPayslips} bulletins payés`,
+        icon: TrendingUp,
+        trend: { value: totalPayslips > 0 ? Math.round((paidPayslips / totalPayslips) * 100) : 0, label: `${totalPayslips > 0 ? Math.round((paidPayslips / totalPayslips) * 100) : 0}% versé` }
+      }
+    ]
+  }, [employeesData, payslipsData])
+
+  // Calculate payroll progress
+  const payrollProgress = React.useMemo(() => {
+    const total = employeesData.length
+    const generated = payslipsData.length
+    const validated = payslipsData.filter(p => p.status === 'PAYE' || p.status === 'EN_ATTENTE').length
+    const paid = payslipsData.filter(p => p.status === 'PAYE').length
+
+    return { total, generated, validated, paid }
+  }, [employeesData, payslipsData])
+
+
 
   const recentPayslips = [
     {
@@ -57,24 +103,24 @@ const AdminDashboard = () => {
       render: (value, row) => (
         <div className="flex items-center space-x-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            {row.employee.firstName[0] + row.employee.lastName[0]}
           </div>
           <div>
-            <p className="font-medium text-sm">{value}</p>
-            <p className="text-xs text-muted-foreground">{row.position}</p>
+            <p className="font-medium text-sm">{row.employee.firstName} {row.employee.lastName}</p>
+            <p className="text-xs text-muted-foreground">{row.employee.position}</p>
           </div>
         </div>
       )
     },
     {
-      key: 'gross',
+      key: 'grossSalary',
       title: 'Brut',
-      render: (value) => <span className="font-medium">€{value.toLocaleString()}</span>
+      render: (value) => <span className="font-medium">€{value?.toLocaleString() || 0}</span>
     },
     {
-      key: 'net',
+      key: 'netSalary',
       title: 'Net',
-      render: (value) => <span className="font-semibold text-primary">€{value.toLocaleString()}</span>
+      render: (value) => <span className="font-semibold text-primary">€{value?.toLocaleString() || 0}</span>
     },
     {
       key: 'status',
@@ -82,14 +128,14 @@ const AdminDashboard = () => {
       render: (value) => (
         <Badge
           variant={
-            value === 'paid' ? 'default' :
-            value === 'pending' ? 'secondary' :
+            value === 'PAYE' ? 'default' :
+            value === 'EN_ATTENTE' ? 'secondary' :
             'destructive'
           }
         >
-          {value === 'paid' ? (
+          {value === 'PAYE' ? (
             <><CheckCircle className="mr-1 h-3 w-3" />Payé</>
-          ) : value === 'pending' ? (
+          ) : value === 'EN_ATTENTE' ? (
             <><Clock className="mr-1 h-3 w-3" />En attente</>
           ) : (
             <><AlertCircle className="mr-1 h-3 w-3" />Erreur</>
@@ -99,13 +145,7 @@ const AdminDashboard = () => {
     }
   ]
 
-  const payslipsData = [
-    { employee: 'Marie Dubois', position: 'Développeuse Senior', gross: 4500, net: 3420, status: 'paid' },
-    { employee: 'Pierre Martin', position: 'Chef de Projet', gross: 5200, net: 3900, status: 'paid' },
-    { employee: 'Sophie Leroy', position: 'Designer UX/UI', gross: 3800, net: 2950, status: 'pending' },
-    { employee: 'Jean Moreau', position: 'Développeur Junior', gross: 2800, net: 2280, status: 'pending' },
-    { employee: 'Claire Bernard', position: 'Analyste Business', gross: 4200, net: 3200, status: 'paid' }
-  ]
+
 
   const upcomingTasks = [
     { task: 'Validation du cycle de paie février', deadline: 'Dans 2 jours', priority: 'high' },
@@ -114,12 +154,7 @@ const AdminDashboard = () => {
     { task: 'Révision des contrats saisonniers', deadline: 'Dans 10 jours', priority: 'low' }
   ]
 
-  const payrollProgress = {
-    total: 128,
-    generated: 124,
-    validated: 98,
-    paid: 85
-  }
+
 
   return (
     <div className="space-y-6">
@@ -128,7 +163,7 @@ const AdminDashboard = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard Admin</h1>
           <p className="text-muted-foreground">
-            Vue d'ensemble de la gestion des salaires - TechCorp SARL
+            Vue d'ensemble de la gestion des salaires
           </p>
         </div>
         <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>
@@ -241,7 +276,9 @@ const AdminDashboard = () => {
         <CardContent>
           <DataTable
             columns={recentPayslips}
-            data={payslipsData}
+            data={payslipsData.slice(0, 5)} // Show only recent 5
+            loading={payslipsLoading}
+            emptyMessage="Aucun bulletin de paie trouvé"
           />
         </CardContent>
       </Card>

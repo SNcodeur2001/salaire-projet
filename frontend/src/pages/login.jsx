@@ -1,15 +1,19 @@
 import * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/contexts/AuthContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.jsx"
 import { Button } from "@/components/ui/enhanced-button.jsx"
 import { Input } from "@/components/ui/input.jsx"
 import { Label } from "@/components/ui/label.jsx"
 import { Calculator, Eye, EyeOff, LogIn } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 const Login = () => {
   const navigate = useNavigate()
+  const { login } = useAuth()
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -28,17 +32,30 @@ const Login = () => {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate login logic - redirect based on email domain
-    setTimeout(() => {
-      if (formData.email.includes('superadmin')) {
+    try {
+      const user = await login(formData)
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue ${user.name || user.email}`,
+      })
+
+      // Redirect based on role
+      if (user.role === 'SUPER_ADMIN') {
         navigate('/super-admin')
-      } else if (formData.email.includes('admin')) {
+      } else if (user.role === 'ADMIN') {
         navigate('/admin')
-      } else {
+      } else if (user.role === 'CAISSIER') {
         navigate('/caissier')
       }
+    } catch (error) {
+      toast({
+        title: "Erreur de connexion",
+        description: error.message || "Identifiants incorrects",
+        variant: "destructive",
+      })
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   const demoUsers = [

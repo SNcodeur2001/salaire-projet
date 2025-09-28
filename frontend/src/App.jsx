@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/dashboard-layout.jsx";
 
 // Pages
@@ -23,73 +25,95 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
 
-          {/* Super Admin Routes */}
-          <Route path="/super-admin" element={
-            <DashboardLayout userRole="super-admin" userName="Super Admin">
-              <SuperAdminDashboard />
-            </DashboardLayout>
-          } />
-          <Route path="/super-admin/entreprises" element={
-            <DashboardLayout userRole="super-admin" userName="Super Admin">
-              <SuperAdminEntreprises />
-            </DashboardLayout>
-          } />
-          <Route path="/super-admin/utilisateurs" element={
-            <DashboardLayout userRole="super-admin" userName="Super Admin">
-              <SuperAdminUsers />
-            </DashboardLayout>
-          } />
+            {/* Super Admin Routes */}
+            <Route path="/super-admin" element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <DashboardLayout userRole="super-admin" userName="Super Admin">
+                  <SuperAdminDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/super-admin/entreprises" element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <DashboardLayout userRole="super-admin" userName="Super Admin">
+                  <SuperAdminEntreprises />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/super-admin/utilisateurs" element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <DashboardLayout userRole="super-admin" userName="Super Admin">
+                  <SuperAdminUsers />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={
-            <DashboardLayout userRole="admin" userName="Marie Dubois">
-              <AdminDashboard />
-            </DashboardLayout>
-          } />
-          <Route path="/admin/employes" element={
-            <DashboardLayout userRole="admin" userName="Marie Dubois">
-              <AdminEmployees />
-            </DashboardLayout>
-          } />
-          <Route path="/admin/payruns" element={
-            <DashboardLayout userRole="admin" userName="Marie Dubois">
-              <AdminPayruns />
-            </DashboardLayout>
-          } />
-          <Route path="/admin/payslips" element={
-            <DashboardLayout userRole="admin" userName="Marie Dubois">
-              <AdminPayslips />
-            </DashboardLayout>
-          } />
+            {/* Admin Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout userRole="admin" userName="Marie Dubois">
+                  <AdminDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/employes" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout userRole="admin" userName="Marie Dubois">
+                  <AdminEmployees />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/payruns" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout userRole="admin" userName="Marie Dubois">
+                  <AdminPayruns />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/payslips" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout userRole="admin" userName="Marie Dubois">
+                  <AdminPayslips />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Caissier Routes */}
-          <Route path="/caissier" element={
-            <DashboardLayout userRole="caissier" userName="Sophie Martin">
-              <CaissierDashboard />
-            </DashboardLayout>
-          } />
-          <Route path="/caissier/payslips" element={
-            <DashboardLayout userRole="caissier" userName="Sophie Martin">
-              <CaissierPayslips />
-            </DashboardLayout>
-          } />
-          <Route path="/caissier/paiements" element={
-            <DashboardLayout userRole="caissier" userName="Sophie Martin">
-              <CaissierPaiements />
-            </DashboardLayout>
-          } />
+            {/* Caissier Routes */}
+            <Route path="/caissier" element={
+              <ProtectedRoute allowedRoles={['CAISSIER']}>
+                <DashboardLayout userRole="caissier" userName="Sophie Martin">
+                  <CaissierDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/caissier/payslips" element={
+              <ProtectedRoute allowedRoles={['CAISSIER']}>
+                <DashboardLayout userRole="caissier" userName="Sophie Martin">
+                  <CaissierPayslips />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/caissier/paiements" element={
+              <ProtectedRoute allowedRoles={['CAISSIER']}>
+                <DashboardLayout userRole="caissier" userName="Sophie Martin">
+                  <CaissierPaiements />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

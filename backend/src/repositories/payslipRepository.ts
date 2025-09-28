@@ -13,6 +13,14 @@ export class PayslipRepository {
     return await prisma.payslip.create({ data });
   }
 
+  async findAllByEntreprise(entrepriseId: string): Promise<Payslip[]> {
+    return await prisma.payslip.findMany({
+      where: { employee: { entrepriseId } },
+      include: { employee: true, cycle: true, payments: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findById(id: string, entrepriseId: string): Promise<Payslip | null> {
     return await prisma.payslip.findFirst({
       where: { id, employee: { entrepriseId } },
