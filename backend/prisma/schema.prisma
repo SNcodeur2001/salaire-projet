@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // ou "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CAISSIER
+  EMPLOYE
+}
+
+enum ContractType {
+  JOURNALIER
+  FIXE
+  HONORAIRE
+}
+
+enum PayrunStatus {
+  BROUILLON
+  APPROUVE
+  CLOS
+}
+
+enum PayslipStatus {
+  EN_ATTENTE
+  PARTIEL
+  PAYE
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  role        Role     @default(EMPLOYE)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  entrepriseId String?   // null pour super-admin
+  entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
+  employee     Employee?   // si l'utilisateur est aussi un employé
+  payments     Payment[]   @relation("CaissierPayments")
+}
+
+model Entreprise {
+  id          String   @id @default(uuid())
+  name        String
+  logo        String?
+  address     String?
+  currency    String
+  periodType  String    // mensuelle / hebdo / journalière
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       User[]
+  employees   Employee[]
+  payruns     PayrollCycle[]
+}
+
+model Employee {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  poste       String
+  contract    ContractType
+  baseSalary  Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  entrepriseId String
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id])
+  userId       String?     @unique
+  user         User?       @relation(fields: [userId], references: [id])
+  payslips     Payslip[]
+}
+
+model PayrollCycle {
+  id          String   @id @default(uuid())
+  period      String   // ex: 2025-09, ou "Semaine 39"
+  status      PayrunStatus @default(BROUILLON)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  entrepriseId String
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id])
+  payslips     Payslip[]
+}
+
+model Payslip {
+  id          String   @id @default(uuid())
+  grossSalary Float
+  deductions  Float
+  netSalary   Float
+  status      PayslipStatus @default(EN_ATTENTE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  cycleId    String
+  cycle      PayrollCycle @relation(fields: [cycleId], references: [id])
+  payments   Payment[]
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  amount      Float
+  mode        String      // ESPECES, VIREMENT, OM, WAVE, etc.
+  paymentDate DateTime @default(now())
+  receiptUrl  String?     // lien vers PDF reçu
+
+  // Relations
+  payslipId  String
+  payslip    Payslip @relation(fields: [payslipId], references: [id])
+  caissierId String
+  caissier   User @relation("CaissierPayments", fields: [caissierId], references: [id])
+}
