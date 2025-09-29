@@ -60,14 +60,20 @@ const SuperAdminEntreprises = () => {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [createDialog, setCreateDialog] = useState(false)
+  const [editDialog, setEditDialog] = useState({ open: false, entreprise: null })
   const [deleteDialog, setDeleteDialog] = useState({ open: false, entreprise: null })
 
   const form = useForm({
     defaultValues: {
       name: "",
       address: "",
+      logo: "",
       currency: "EUR",
       periodType: "mensuelle",
+      adminFirstName: "",
+      adminLastName: "",
+      adminEmail: "",
+      adminPassword: "",
     },
   })
 
@@ -85,13 +91,38 @@ const SuperAdminEntreprises = () => {
     mutationFn: (data) => apiClient.createEntreprise({
       name: data.name,
       address: data.address,
+      logo: data.logo || undefined,
+      currency: data.currency,
+      periodType: data.periodType,
+      adminFirstName: data.adminFirstName,
+      adminLastName: data.adminLastName,
+      adminEmail: data.adminEmail,
+      adminPassword: data.adminPassword,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entreprises'] })
+      toast({ title: "Entreprise créée", description: "L'entreprise et l'administrateur ont été créés avec succès." })
+      setCreateDialog(false)
+      form.reset()
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" })
+    },
+  })
+
+  // Update entreprise mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => apiClient.updateEntreprise(id, {
+      name: data.name,
+      address: data.address,
+      logo: data.logo || undefined,
       currency: data.currency,
       periodType: data.periodType,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entreprises'] })
-      toast({ title: "Entreprise créée", description: "L'entreprise a été créée avec succès." })
-      setCreateDialog(false)
+      toast({ title: "Entreprise modifiée", description: "L'entreprise a été modifiée avec succès." })
+      setEditDialog({ open: false, entreprise: null })
       form.reset()
     },
     onError: (error) => {
@@ -114,7 +145,27 @@ const SuperAdminEntreprises = () => {
 
   // Handle create
   const onSubmit = (data) => {
-    createMutation.mutate(data)
+    if (editDialog.entreprise) {
+      updateMutation.mutate({ id: editDialog.entreprise.id, data })
+    } else {
+      createMutation.mutate(data)
+    }
+  }
+
+  // Handle edit
+  const handleEdit = (entreprise) => {
+    setEditDialog({ open: true, entreprise })
+    form.reset({
+      name: entreprise.name,
+      address: entreprise.address || "",
+      logo: entreprise.logo || "",
+      currency: entreprise.currency,
+      periodType: entreprise.periodType,
+      adminFirstName: "",
+      adminLastName: "",
+      adminEmail: "",
+      adminPassword: "",
+    })
   }
 
   // Handle delete
@@ -184,7 +235,7 @@ const SuperAdminEntreprises = () => {
               <Eye className="mr-2 h-4 w-4" />
               Voir détails
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEdit(row)}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
@@ -312,13 +363,19 @@ const SuperAdminEntreprises = () => {
         </CardContent>
       </Card>
 
-      {/* Create Entreprise Dialog */}
-      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+      {/* Create/Edit Entreprise Dialog */}
+      <Dialog open={createDialog || editDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setCreateDialog(false)
+          setEditDialog({ open: false, entreprise: null })
+          form.reset()
+        }
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Créer une entreprise</DialogTitle>
+            <DialogTitle>{editDialog.entreprise ? "Modifier l'entreprise" : "Créer une entreprise"}</DialogTitle>
             <DialogDescription>
-              Créez une nouvelle entreprise sur la plateforme.
+              {editDialog.entreprise ? "Modifiez les informations de l'entreprise." : "Créez une nouvelle entreprise sur la plateforme."}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -340,18 +397,31 @@ const SuperAdminEntreprises = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="address"
+                  name="logo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Adresse</FormLabel>
+                      <FormLabel>Logo (URL)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Adresse de l'entreprise" {...field} />
+                        <Input placeholder="https://example.com/logo.png" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Adresse de l'entreprise" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -398,13 +468,82 @@ const SuperAdminEntreprises = () => {
                   )}
                 />
               </div>
+              {!editDialog.entreprise && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-4">Informations de l'administrateur</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="adminFirstName"
+                      rules={{ required: "Le prénom est requis" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Prénom</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Prénom" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="adminLastName"
+                      rules={{ required: "Le nom est requis" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nom</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nom" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="adminEmail"
+                      rules={{ required: "L'email est requis", pattern: { value: /^\S+@\S+$/, message: "Email invalide" } }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="admin@entreprise.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="adminPassword"
+                      rules={{ required: "Le mot de passe est requis", minLength: { value: 6, message: "Minimum 6 caractères" } }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mot de passe</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Mot de passe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setCreateDialog(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setCreateDialog(false)
+                  setEditDialog({ open: false, entreprise: null })
+                  form.reset()
+                }}>
                   Annuler
                 </Button>
-                <Button type="submit" loading={createMutation.isPending}>
-                  Créer l'entreprise
+                <Button type="submit" loading={editDialog.entreprise ? updateMutation.isPending : createMutation.isPending}>
+                  {editDialog.entreprise ? "Modifier l'entreprise" : "Créer l'entreprise"}
                 </Button>
               </DialogFooter>
             </form>

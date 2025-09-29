@@ -47,12 +47,79 @@ const AdminPayruns = () => {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [payrunDialog, setPayrunDialog] = useState({ open: false, payrun: null, isEdit: false })
+  const [launchDialog, setLaunchDialog] = useState({ open: false, payrun: null })
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, payrun: null })
+  const [detailsDialog, setDetailsDialog] = useState({ open: false, payrun: null })
 
   // Fetch payruns
   const { data: payrunsData = [], isLoading, error } = useQuery({
     queryKey: ['payruns', user?.entrepriseId],
     queryFn: () => apiClient.getPayruns({ entrepriseId: user?.entrepriseId }),
     enabled: !!user,
+  })
+
+  // Update mutation for payruns (used for edit, launch, delete)
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => apiClient.updatePayrun(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payruns', user?.entrepriseId] })
+      queryClient.invalidateQueries({ queryKey: ['payslips', user?.entrepriseId] })
+      toast({ title: "Cycle mis à jour", description: "Le cycle de paie a été mis à jour avec succès." })
+      setLaunchDialog({ open: false, payrun: null })
+      setDeleteDialog({ open: false, payrun: null })
+    },
+    onError: (err) => {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" })
+    },
+  })
+
+  // Create mutation for payruns
+  const createMutation = useMutation({
+    mutationFn: (data) => apiClient.createPayrun(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payruns', user?.entrepriseId] })
+      toast({ title: "Cycle créé", description: "Le cycle de paie a été créé avec succès." })
+      setPayrunDialog({ open: false, payrun: null, isEdit: false })
+    },
+    onError: (err) => {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" })
+    },
+  })
+
+  // Handle launch cycle
+  const handleLaunch = (payrun) => {
+    setLaunchDialog({ open: true, payrun })
+  }
+
+  const confirmLaunch = () => {
+    if (launchDialog.payrun) {
+      updateMutation.mutate({
+        id: launchDialog.payrun.id,
+        data: { status: 'APPROUVE' }
+      })
+    }
+  }
+
+  // Handle delete
+  const handleDelete = (payrun) => {
+    setDeleteDialog({ open: true, payrun })
+  }
+
+  const confirmDelete = () => {
+    if (deleteDialog.payrun) {
+      updateMutation.mutate({
+        id: deleteDialog.payrun.id,
+        data: { status: 'SUPPRIME' } // Assuming a deleted status; adjust if backend uses soft delete
+      })
+    }
+  }
+
+  // Fetch payslips for details modal
+  const { data: payslipsForDetails = [] } = useQuery({
+    queryKey: ['payslips', detailsDialog.payrun?.id],
+    queryFn: () => apiClient.getPayrunPayslips(detailsDialog.payrun?.id),
+    enabled: !!detailsDialog.payrun?.id,
   })
 
   const columns = [
@@ -149,22 +216,22 @@ const AdminPayruns = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDetailsDialog({ open: true, payrun: row })}>
               <Eye className="mr-2 h-4 w-4" />
               Voir détails
             </DropdownMenuItem>
             {row.status === 'BROUILLON' && (
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleLaunch(row)}>
                 <Play className="mr-2 h-4 w-4" />
                 Lancer le cycle
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPayrunDialog({ open: true, payrun: row, isEdit: true })}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(row)}>
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
             </DropdownMenuItem>
@@ -207,7 +274,7 @@ const AdminPayruns = () => {
             Gestion des cycles de traitement des salaires
           </p>
         </div>
-        <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>
+        <Button variant="gradient" icon={<Plus className="h-4 w-4" />} onClick={() => setPayrunDialog({ open: true, payrun: null, isEdit: false })}>
           Créer un cycle
         </Button>
       </div>
@@ -325,6 +392,140 @@ const AdminPayruns = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Payrun Form Dialog */}
+      <Dialog open={payrunDialog.open} onOpenChange={() => setPayrunDialog({ open: false, payrun: null, isEdit: false })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{payrunDialog.isEdit ? "Modifier le cycle" : "Créer un cycle"}</DialogTitle>
+            <DialogDescription>
+              {payrunDialog.isEdit ? "Modifiez les informations du cycle." : "Remplissez les informations pour créer un nouveau cycle."}
+            </DialogDescription>
+          </DialogHeader>
+          <PayrunForm
+            defaultValues={payrunDialog.payrun || {}}
+            isEdit={payrunDialog.isEdit}
+            onSuccess={() => {
+              setPayrunDialog({ open: false, payrun: null, isEdit: false })
+              if (payrunDialog.isEdit) {
+                updateMutation.mutate({
+                  id: payrunDialog.payrun.id,
+                  data: payrunDialog.payrun
+                })
+              } else {
+                createMutation.mutate({ ...payrunDialog.payrun, entrepriseId: user?.entrepriseId })
+              }
+            }}
+            onCancel={() => setPayrunDialog({ open: false, payrun: null, isEdit: false })}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Launch Confirmation Dialog */}
+      <Dialog open={launchDialog.open} onOpenChange={() => setLaunchDialog({ open: false, payrun: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer le lancement</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir lancer le cycle <span className="font-semibold">{launchDialog.payrun?.period}</span> ? Cela passera le statut à "Approuvé".
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLaunchDialog({ open: false, payrun: null })}>
+              Annuler
+            </Button>
+            <Button onClick={confirmLaunch} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Lancement..." : "Lancer le cycle"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={() => setDeleteDialog({ open: false, payrun: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer le cycle <span className="font-semibold">{deleteDialog.payrun?.period}</span> ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, payrun: null })}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={detailsDialog.open} onOpenChange={() => setDetailsDialog({ open: false, payrun: null })}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Détails du cycle: {detailsDialog.payrun?.period}</DialogTitle>
+            <DialogDescription>
+              Statut: <Badge variant="secondary">{detailsDialog.payrun?.status}</Badge>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-semibold mb-2">Bulletins de paie</h3>
+                {payslipsForDetails.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {payslipsForDetails.map((payslip) => (
+                      <div key={payslip.id} className="flex items-center justify-between p-3 border rounded">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                            {payslip.employee.firstName[0]}{payslip.employee.lastName[0]}
+                          </div>
+                          <div>
+                            <p className="font-medium">{payslip.employee.firstName} {payslip.employee.lastName}</p>
+                            <p className="text-sm text-muted-foreground">{payslip.employee.position}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">€{payslip.netSalary?.toLocaleString()}</p>
+                          <Badge variant={payslip.status === 'PAYE' ? 'default' : 'secondary'}>
+                            {payslip.status === 'PAYE' ? 'Payé' : 'En attente'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Aucun bulletin généré pour ce cycle.</p>
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Résumé financier</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Total brut</span>
+                    <span>€{detailsDialog.payrun?.payslips?.reduce((sum, p) => sum + (p.grossSalary || 0), 0)?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total charges</span>
+                    <span>€{detailsDialog.payrun?.payslips?.reduce((sum, p) => sum + (p.deductions || 0), 0)?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 font-semibold">
+                    <span>Total net</span>
+                    <span>€{detailsDialog.payrun?.payslips?.reduce((sum, p) => sum + (p.netSalary || 0), 0)?.toLocaleString() || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setDetailsDialog({ open: false, payrun: null })}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

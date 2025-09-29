@@ -1,8 +1,9 @@
 import * as React from "react"
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
 import { apiClient } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,18 +39,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { PayslipDetailsDialog } from "@/components/admin/PayslipDetailsDialog"
+import { PayslipForm } from "@/components/admin/PayslipForm"
 
 const AdminPayslips = () => {
   const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [monthFilter, setMonthFilter] = useState("all")
+  const [detailsDialog, setDetailsDialog] = useState({ open: false, payslipId: null })
+  const [editDialog, setEditDialog] = useState({ open: false, payslip: null })
+  const [generateDialog, setGenerateDialog] = useState({ open: false, payrunId: null })
 
   // Fetch payslips
   const { data: payslipsData = [], isLoading, error } = useQuery({
     queryKey: ['payslips', user?.entrepriseId],
     queryFn: () => apiClient.getPayslips({ entrepriseId: user?.entrepriseId }),
     enabled: !!user,
+  })
+
+  // Generate payslips mutation
+  const generateMutation = useMutation({
+    mutationFn: (payrunId) => apiClient.generatePayslips(payrunId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payslips', user?.entrepriseId] })
+      queryClient.invalidateQueries({ queryKey: ['payruns', user?.entrepriseId] })
+      toast({ title: "Bulletins générés", description: "Les bulletins de paie ont été générés avec succès." })
+      setGenerateDialog({ open: false, payrunId: null })
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" })
+    },
+  })
+
+  // Fetch payruns for generation dialog
+  const { data: payrunsData = [] } = useQuery({
+    queryKey: ['payruns', user?.entrepriseId],
+    queryFn: () => apiClient.getPayruns({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user && generateDialog.open,
   })
 
   const columns = [
@@ -137,24 +174,24 @@ const AdminPayslips = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDetailsDialog({ open: true, payslipId: row.id })}>
               <Eye className="mr-2 h-4 w-4" />
               Voir détails
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDownloadPdf(row.id)}>
               <Download className="mr-2 h-4 w-4" />
               Télécharger PDF
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSendEmail(row.id)}>
               <Mail className="mr-2 h-4 w-4" />
               Envoyer par email
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePrint(row.id)}>
               <Printer className="mr-2 h-4 w-4" />
               Imprimer
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditDialog({ open: true, payslip: row })}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
@@ -187,6 +224,40 @@ const AdminPayslips = () => {
     totalDeductions: payslipsData.reduce((sum, p) => sum + (p.deductions || 0), 0)
   }
 
+  // Action handlers
+  const handleDownloadPdf = async (payslipId) => {
+    try {
+      await apiClient.downloadPayslipPdf(payslipId)
+      toast({ title: "Téléchargement", description: "Le PDF a été téléchargé avec succès." })
+    } catch (error) {
+      toast({ title: "Erreur", description: "Erreur lors du téléchargement du PDF.", variant: "destructive" })
+    }
+  }
+
+  const handleSendEmail = async (payslipId) => {
+    try {
+      await apiClient.sendPayslipEmail(payslipId)
+      toast({ title: "Email envoyé", description: "Le bulletin a été envoyé par email avec succès." })
+    } catch (error) {
+      toast({ title: "Erreur", description: "Erreur lors de l'envoi de l'email.", variant: "destructive" })
+    }
+  }
+
+  const handlePrint = (payslipId) => {
+    // Open PDF in new window for printing
+    window.open(`http://localhost:4000/api/payslips/${payslipId}/pdf`, '_blank')
+  }
+
+  const handleGeneratePayslips = () => {
+    setGenerateDialog({ open: true, payrunId: null })
+  }
+
+  const confirmGeneratePayslips = () => {
+    if (generateDialog.payrunId) {
+      generateMutation.mutate(generateDialog.payrunId)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -201,7 +272,7 @@ const AdminPayslips = () => {
           <Button variant="outline" icon={<Download className="h-4 w-4" />}>
             Export Excel
           </Button>
-          <Button variant="gradient" icon={<FileText className="h-4 w-4" />}>
+          <Button variant="gradient" icon={<FileText className="h-4 w-4" />} onClick={handleGeneratePayslips}>
             Générer bulletins
           </Button>
         </div>
@@ -342,6 +413,73 @@ const AdminPayslips = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Payslip Details Dialog */}
+      <PayslipDetailsDialog
+        payslipId={detailsDialog.payslipId}
+        open={detailsDialog.open}
+        onOpenChange={(open) => setDetailsDialog({ open, payslipId: open ? detailsDialog.payslipId : null })}
+      />
+
+      {/* Edit Payslip Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={() => setEditDialog({ open: false, payslip: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le bulletin</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du bulletin de paie.
+            </DialogDescription>
+          </DialogHeader>
+          {editDialog.payslip && (
+            <PayslipForm
+              defaultValues={editDialog.payslip}
+              isEdit={true}
+              onSuccess={() => {
+                setEditDialog({ open: false, payslip: null })
+                queryClient.invalidateQueries({ queryKey: ['payslips', user?.entrepriseId] })
+              }}
+              onCancel={() => setEditDialog({ open: false, payslip: null })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Payslips Dialog */}
+      <Dialog open={generateDialog.open} onOpenChange={() => setGenerateDialog({ open: false, payrunId: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Générer des bulletins</DialogTitle>
+            <DialogDescription>
+              Sélectionnez un cycle de paie pour générer les bulletins de salaire.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Cycle de paie</label>
+              <Select value={generateDialog.payrunId || ""} onValueChange={(value) => setGenerateDialog({ ...generateDialog, payrunId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un cycle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {payrunsData.filter(p => p.status === 'APPROUVE').map((payrun) => (
+                    <SelectItem key={payrun.id} value={payrun.id}>
+                      {payrun.period}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGenerateDialog({ open: false, payrunId: null })}>
+              Annuler
+            </Button>
+            <Button onClick={confirmGeneratePayslips} disabled={generateMutation.isPending || !generateDialog.payrunId}>
+              {generateMutation.isPending ? "Génération..." : "Générer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

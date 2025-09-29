@@ -48,13 +48,7 @@ const App = () => (
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/super-admin/utilisateurs" element={
-              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-                <DashboardLayout userRole="super-admin" userName="Super Admin">
-                  <SuperAdminUsers />
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
+
 
             {/* Admin Routes */}
             <Route path="/admin" element={

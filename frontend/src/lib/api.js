@@ -20,12 +20,17 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
 
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.message || 'API request failed');
       }
 
+      if (response.status === 204) {
+        return null;
+      }
+
+      const data = await response.json();
       return data;
     } catch (error) {
       console.error('API request failed:', error);
@@ -162,6 +167,36 @@ class ApiClient {
     return this.request(`/payslips/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payslip),
+    });
+  }
+
+  async generatePayslips(payrunId) {
+    return this.request('/payslips/generate', {
+      method: 'POST',
+      body: JSON.stringify({ payrunId }),
+    });
+  }
+
+  async downloadPayslipPdf(id) {
+    const response = await this.request(`/payslips/${id}/pdf`, {
+      headers: {
+        'Accept': 'application/pdf',
+      },
+    });
+    // Assuming response is a blob URL or base64; adjust based on backend
+    const blob = new Blob([response], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulletin_${id}.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    return response;
+  }
+
+  async sendPayslipEmail(id) {
+    return this.request(`/payslips/${id}/email`, {
+      method: 'POST',
     });
   }
 

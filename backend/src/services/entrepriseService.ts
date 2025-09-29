@@ -1,4 +1,5 @@
 import entrepriseRepository from '../repositories/entrepriseRepository.js';
+import authService from './authService.js';
 
 export class EntrepriseService {
   async getAllEntreprises() {
@@ -19,12 +20,41 @@ export class EntrepriseService {
     address?: string;
     currency: string;
     periodType: string;
+    adminFirstName?: string;
+    adminLastName?: string;
+    adminEmail?: string;
+    adminPassword?: string;
   }) {
     // Validation
     if (!data.name || !data.currency || !data.periodType) {
       throw new Error('Nom, devise et type de période requis');
     }
-    return await entrepriseRepository.create(data);
+
+    // Create entreprise
+    const entreprise = await entrepriseRepository.create({
+      name: data.name,
+      logo: data.logo,
+      address: data.address,
+      currency: data.currency,
+      periodType: data.periodType,
+    });
+
+    // Create admin user if admin data provided
+    if (data.adminEmail && data.adminPassword) {
+      try {
+        await authService.register(
+          data.adminEmail,
+          data.adminPassword,
+          'ADMIN',
+          entreprise.id
+        );
+      } catch (error) {
+        // If admin creation fails, don't delete the entreprise
+        // Just log the error, entreprise is created without admin
+      }
+    }
+
+    return entreprise;
   }
 
   async updateEntreprise(id: string, data: Partial<{

@@ -46,6 +46,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { EmployeeForm } from "@/components/admin/EmployeeForm"
+import { EmployeeProfileDialog } from "@/components/admin/EmployeeProfileDialog"
 
 const AdminEmployees = () => {
   const { user } = useAuth()
@@ -55,6 +57,8 @@ const AdminEmployees = () => {
   const [statusFilter, setStatusFilter] = useState("all")
   const [contractFilter, setContractFilter] = useState("all")
   const [deleteDialog, setDeleteDialog] = useState({ open: false, employee: null })
+  const [employeeDialog, setEmployeeDialog] = useState({ open: false, employee: null, isEdit: false })
+  const [profileDialog, setProfileDialog] = useState({ open: false, employeeId: null })
 
   // Fetch employees
   const { data: employeesData = [], isLoading, error } = useQuery({
@@ -178,15 +182,15 @@ const AdminEmployees = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setProfileDialog({ open: true, employeeId: row.id })}>
               <Eye className="mr-2 h-4 w-4" />
               Voir profil
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setProfileDialog({ open: true, employeeId: row.id })}>
               <FileText className="mr-2 h-4 w-4" />
               Bulletins de paie
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEmployeeDialog({ open: true, employee: row, isEdit: true })}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
@@ -289,7 +293,7 @@ const AdminEmployees = () => {
             Gestion des employés de TechCorp SARL
           </p>
         </div>
-        <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>
+        <Button variant="gradient" icon={<Plus className="h-4 w-4" />} onClick={() => setEmployeeDialog({ open: true, employee: null, isEdit: false })}>
           Ajouter un employé
         </Button>
       </div>
@@ -437,6 +441,34 @@ const AdminEmployees = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Employee Form Dialog */}
+      <Dialog open={employeeDialog.open} onOpenChange={() => setEmployeeDialog({ open: false, employee: null, isEdit: false })}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{employeeDialog.isEdit ? "Modifier l'employé" : "Ajouter un employé"}</DialogTitle>
+            <DialogDescription>
+              {employeeDialog.isEdit ? "Modifiez les informations de l'employé." : "Remplissez les informations pour ajouter un nouvel employé."}
+            </DialogDescription>
+          </DialogHeader>
+          <EmployeeForm
+            defaultValues={employeeDialog.employee || {}}
+            isEdit={employeeDialog.isEdit}
+            onSuccess={() => {
+              setEmployeeDialog({ open: false, employee: null, isEdit: false })
+              queryClient.invalidateQueries({ queryKey: ['employees'] })
+            }}
+            onCancel={() => setEmployeeDialog({ open: false, employee: null, isEdit: false })}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Employee Profile Dialog */}
+      <EmployeeProfileDialog
+        employeeId={profileDialog.employeeId}
+        open={profileDialog.open}
+        onOpenChange={(open) => setProfileDialog({ open, employeeId: open ? profileDialog.employeeId : null })}
+      />
     </div>
   )
 }

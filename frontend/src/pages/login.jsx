@@ -2,13 +2,13 @@ import * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.jsx"
-import { Button } from "@/components/ui/enhanced-button.jsx"
-import { Input } from "@/components/ui/input.jsx"
-import { Label } from "@/components/ui/label.jsx"
+import { useToast } from "@/components/ui/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/enhanced-button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Calculator, Eye, EyeOff, LogIn } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
 
 const Login = () => {
   const navigate = useNavigate()
@@ -34,24 +34,25 @@ const Login = () => {
 
     try {
       const user = await login(formData)
-      toast({
-        title: "Connexion réussie",
-        description: `Bienvenue ${user.name || user.email}`,
-      })
-
-      // Redirect based on role
+      // Navigate based on role
       if (user.role === 'SUPER_ADMIN') {
         navigate('/super-admin')
       } else if (user.role === 'ADMIN') {
         navigate('/admin')
       } else if (user.role === 'CAISSIER') {
         navigate('/caissier')
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Rôle non reconnu",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       toast({
         title: "Erreur de connexion",
-        description: error.message || "Identifiants incorrects",
-        variant: "destructive",
+        description: error.message || "Vérifiez vos identifiants",
+        variant: "destructive"
       })
     } finally {
       setLoading(false)
@@ -66,6 +67,8 @@ const Login = () => {
 
   const quickLogin = (email, password) => {
     setFormData({ email, password })
+    // Auto submit after setting
+    setTimeout(() => handleSubmit(new Event('submit')), 100)
   }
 
   return (
@@ -87,16 +90,14 @@ const Login = () => {
         </div>
 
         {/* Login Form */}
-        <Card className="shadow-xl border-0">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-semibold text-center">
-              Connexion
-            </CardTitle>
-            <CardDescription className="text-center">
-              Connectez-vous à votre espace
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl">Connexion</CardTitle>
+            <CardDescription>
+              Entrez vos informations pour vous connecter à votre compte
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Adresse email</Label>
@@ -108,35 +109,31 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="h-11"
                 />
               </div>
-
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="password">Mot de passe</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                    className="h-11 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="h-11 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
 
               <Button
@@ -160,6 +157,7 @@ const Login = () => {
                 {demoUsers.map((user, index) => (
                   <button
                     key={index}
+                    type="button"
                     onClick={() => quickLogin(user.email, user.password)}
                     className={cn(
                       "w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors",
