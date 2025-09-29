@@ -40,6 +40,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { PayrunForm } from "@/components/admin/PayrunForm"
 
 const AdminPayruns = () => {
   const { user } = useAuth()

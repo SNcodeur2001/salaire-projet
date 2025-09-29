@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
 import { apiClient } from "@/lib/api"
@@ -62,15 +62,28 @@ const AdminEmployees = () => {
 
   // Fetch employees
   const { data: employeesData = [], isLoading, error } = useQuery({
-    queryKey: ['employees', { search: searchTerm, status: statusFilter, contract: contractFilter, entrepriseId: user?.entrepriseId }],
-    queryFn: () => apiClient.getEmployees({
-      search: searchTerm || undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined,
-      contract: contractFilter !== 'all' ? contractFilter : undefined,
-      entrepriseId: user?.entrepriseId
-    }),
+    queryKey: ['employees', user?.entrepriseId],
+    queryFn: () => apiClient.getEmployees({ entrepriseId: user?.entrepriseId }),
     enabled: !!user,
   })
+
+  // Client-side filtering
+  const filteredData = useMemo(() => {
+    return employeesData.filter(employee => {
+      const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase()
+      const matchesSearch = !searchTerm ||
+        fullName.includes(searchTerm.toLowerCase()) ||
+        employee.poste.toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesStatus = statusFilter === "all" ||
+        (statusFilter === "active" && employee.isActive) ||
+        (statusFilter === "inactive" && !employee.isActive)
+
+      const matchesContract = contractFilter === "all" || employee.contract === contractFilter
+
+      return matchesSearch && matchesStatus && matchesContract
+    })
+  }, [employeesData, searchTerm, statusFilter, contractFilter])
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -98,76 +111,52 @@ const AdminEmployees = () => {
 
   const columns = [
     {
-      key: 'name',
+      key: 'firstName',
       title: 'Employé',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium">{value}</p>
-            <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-              <Mail className="h-3 w-3" />
-              <span>{row.email}</span>
+      render: (value, row) => {
+        const fullName = `${value} ${row.lastName}`;
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              {fullName.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium">{fullName}</p>
+              <p className="text-sm text-muted-foreground">{row.poste}</p>
             </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
-      key: 'position',
-      title: 'Poste',
-      render: (value, row) => (
-        <div>
-          <p className="font-medium">{value}</p>
-          <p className="text-sm text-muted-foreground">{row.department}</p>
-        </div>
-      )
-    },
-    {
-      key: 'contractType',
+      key: 'contract',
       title: 'Contrat',
       render: (value) => (
         <Badge variant="outline">
-          {value === 'CDI' ? 'CDI' : value === 'CDD' ? 'CDD' : 'Stage'}
+          {value === 'JOURNALIER' ? 'Journalier' :
+           value === 'FIXE' ? 'Fixe' :
+           'Honoraire'}
         </Badge>
       )
     },
     {
-      key: 'salary',
+      key: 'baseSalary',
       title: 'Salaire',
       render: (value) => (
         <div className="flex items-center space-x-1">
           <Euro className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">€{value.toLocaleString()}</span>
+          <span className="font-medium">€{value?.toLocaleString()}</span>
         </div>
       )
     },
     {
-      key: 'startDate',
-      title: 'Date d\'embauche',
-      render: (value) => (
-        <div className="flex items-center space-x-1">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
-        </div>
-      )
-    },
-    {
-      key: 'status',
+      key: 'isActive',
       title: 'Statut',
       render: (value) => (
         <Badge
-          variant={
-            value === 'active' ? 'default' :
-            value === 'on_leave' ? 'secondary' :
-            'destructive'
-          }
+          variant={value ? 'default' : 'destructive'}
         >
-          {value === 'active' ? 'Actif' :
-           value === 'on_leave' ? 'En congé' :
-           'Inactif'}
+          {value ? 'Actif' : 'Inactif'}
         </Badge>
       )
     },
@@ -220,11 +209,12 @@ const AdminEmployees = () => {
 
   const stats = {
     total: employeesData.length,
-    active: employeesData.filter(e => e.status === 'active').length,
-    onLeave: employeesData.filter(e => e.status === 'on_leave').length,
-    cdi: employeesData.filter(e => e.contractType === 'CDI').length,
-    cdd: employeesData.filter(e => e.contractType === 'CDD').length,
-    totalSalary: employeesData.reduce((sum, e) => sum + e.salary, 0)
+    active: employeesData.filter(e => e.isActive === true).length,
+    inactive: employeesData.filter(e => e.isActive === false).length,
+    journalier: employeesData.filter(e => e.contract === 'JOURNALIER').length,
+    fixe: employeesData.filter(e => e.contract === 'FIXE').length,
+    honoraire: employeesData.filter(e => e.contract === 'HONORAIRE').length,
+    totalSalary: employeesData.reduce((sum, e) => sum + (e.baseSalary || 0), 0)
   }
 
   if (isLoading) {
@@ -325,10 +315,10 @@ const AdminEmployees = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="h-2 w-2 rounded-full bg-warning" />
+              <div className="h-2 w-2 rounded-full bg-destructive" />
               <div>
-                <p className="text-2xl font-bold text-warning">{stats.onLeave}</p>
-                <p className="text-sm text-muted-foreground">En congé</p>
+                <p className="text-2xl font-bold text-destructive">{stats.inactive}</p>
+                <p className="text-sm text-muted-foreground">Inactifs</p>
               </div>
             </div>
           </CardContent>
@@ -338,8 +328,8 @@ const AdminEmployees = () => {
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 rounded-full bg-primary" />
               <div>
-                <p className="text-2xl font-bold text-primary">{stats.cdi}</p>
-                <p className="text-sm text-muted-foreground">CDI</p>
+                <p className="text-2xl font-bold text-primary">{stats.journalier}</p>
+                <p className="text-sm text-muted-foreground">Journalier</p>
               </div>
             </div>
           </CardContent>
@@ -349,8 +339,19 @@ const AdminEmployees = () => {
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 rounded-full bg-secondary" />
               <div>
-                <p className="text-2xl font-bold">{stats.cdd}</p>
-                <p className="text-sm text-muted-foreground">CDD</p>
+                <p className="text-2xl font-bold">{stats.fixe}</p>
+                <p className="text-sm text-muted-foreground">Fixe</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="h-2 w-2 rounded-full bg-warning" />
+              <div>
+                <p className="text-2xl font-bold text-warning">{stats.honoraire}</p>
+                <p className="text-sm text-muted-foreground">Honoraire</p>
               </div>
             </div>
           </CardContent>
@@ -375,7 +376,7 @@ const AdminEmployees = () => {
             <div>
               <CardTitle>Liste des Employés</CardTitle>
               <CardDescription>
-                {employeesData.length} employé{employeesData.length > 1 ? 's' : ''} trouvé{employeesData.length > 1 ? 's' : ''}
+                {filteredData.length} employé{filteredData.length > 1 ? 's' : ''} trouvé{filteredData.length > 1 ? 's' : ''} sur {employeesData.length}
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -395,7 +396,6 @@ const AdminEmployees = () => {
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="active">Actifs</SelectItem>
-                  <SelectItem value="on_leave">En congé</SelectItem>
                   <SelectItem value="inactive">Inactifs</SelectItem>
                 </SelectContent>
               </Select>
@@ -405,9 +405,9 @@ const AdminEmployees = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="CDI">CDI</SelectItem>
-                  <SelectItem value="CDD">CDD</SelectItem>
-                  <SelectItem value="Stage">Stage</SelectItem>
+                  <SelectItem value="JOURNALIER">Journalier</SelectItem>
+                  <SelectItem value="FIXE">Fixe</SelectItem>
+                  <SelectItem value="HONORAIRE">Honoraire</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -416,7 +416,7 @@ const AdminEmployees = () => {
         <CardContent>
           <DataTable
             columns={columns}
-            data={employeesData}
+            data={filteredData}
             emptyMessage="Aucun employé trouvé"
           />
         </CardContent>
