@@ -44,8 +44,19 @@ export class AuthController {
   async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email et password requis' });
+
+      // Validation détaillée
+      if (!email) {
+        return res.status(400).json({ error: 'L\'adresse email est requise' });
+      }
+      if (!password) {
+        return res.status(400).json({ error: 'Le mot de passe est requis' });
+      }
+      if (typeof email !== 'string' || !email.includes('@')) {
+        return res.status(400).json({ error: 'Format d\'email invalide' });
+      }
+      if (typeof password !== 'string' || password.length < 6) {
+        return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
       }
 
       const result = await authService.login(email, password);

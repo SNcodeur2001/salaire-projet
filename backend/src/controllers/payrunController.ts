@@ -37,6 +37,16 @@ export class PayrunController {
 
   async createPayrun(req: Request, res: Response) {
     try {
+      const { period, status } = req.body;
+
+      // Validation détaillée
+      if (!period || typeof period !== 'string' || period.trim().length === 0) {
+        return res.status(400).json({ error: 'La période est requise et doit être une chaîne non vide' });
+      }
+      if (!status || !['BROUILLON', 'APPROUVE', 'CLOS'].includes(status)) {
+        return res.status(400).json({ error: 'Le statut doit être BROUILLON, APPROUVE ou CLOS' });
+      }
+
       let entrepriseId = req.user?.entrepriseId;
       if (req.user?.role === 'SUPER_ADMIN') {
         entrepriseId = req.body.entrepriseId;
@@ -44,6 +54,7 @@ export class PayrunController {
       if (!entrepriseId) {
         return res.status(400).json({ error: 'Entreprise non trouvée' });
       }
+
       const payrun = await payrunService.createPayrun({ ...req.body, entrepriseId });
       res.status(201).json(payrun);
     } catch (error: any) {

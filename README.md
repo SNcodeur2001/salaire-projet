@@ -1,15 +1,123 @@
-# Auth App
+# Application de Gestion des Salaires
 
-Un modèle d'application d'authentification utilisateur réutilisable avec backend Node.js/Express et frontend React.
+Une application web de gestion des salaires multi-entreprises permettant de gérer les employés, générer des cycles de paie et des bulletins de salaire, suivre les paiements, et offrir un dashboard de suivi avec rôles utilisateurs (super-admin, admin, caissier).
+
+## Contexte et objectifs
+
+De nombreuses petites et moyennes entreprises gèrent encore leurs salaires de manière manuelle (Excel, papier), ce qui entraîne des erreurs, un manque de suivi et des difficultés à générer des justificatifs fiables.
+
+L'objectif de ce projet est de développer une **application web de gestion des salaires multi-entreprises** permettant :
+- de gérer les **employés** avec différents types de contrats (journalier, salaire fixe, honoraire),
+- de générer des **cycles de paie (pay runs)** et des **bulletins de salaire (payslips)**,
+- de suivre les **paiements partiels ou totaux** avec génération de **reçus PDF**,
+- d'offrir un **dashboard de suivi** (cartes, courbes),
+- de permettre la **gestion multi-entreprises** avec rôles utilisateurs (super-admin, admin, caissier).
+
+## Périmètre du projet
+
+### Inclus
+- Gestion multi-entreprises
+- Gestion des employés
+- Gestion des cycles de paie (Pay Run)
+- Gestion des bulletins de paie (Payslip)
+- Gestion des paiements (versements partiels et totaux)
+- Génération de documents PDF (reçus, factures, liste des paiements, bulletins)
+- Dashboard (indicateurs clés, graphiques)
+- Filtrage avancé des employés (statut, poste, type de contrat, actif/inactif)
+- Rôles utilisateurs et permissions
+- Activation/désactivation d'employés (vacataires)
+
+### Hors périmètre (future évolution)
+- Intégration bancaire automatisée
+- Déclarations sociales et fiscales
+- Gestion des congés et absences
+- Intégration mobile (application native)
+
+## Acteurs et rôles
+- **Super-Administrateur** : gère toutes les entreprises, crée et supprime des comptes entreprise.
+- **Administrateur (Entreprise)** : gère son entreprise, ses employés, lance les cycles de paie, approuve les bulletins.
+- **Caissier** : enregistre les paiements, génère les reçus et listes, consulte les bulletins.
+- **Employé (optionnel)** : peut recevoir ses bulletins par email ou espace personnel (phase 2).
+
+## Fonctionnalités
+### 4.1 Tableau de bord
+- Affichage des KPI : masse salariale, montant payé, montant restant, nombre d'employés actifs.
+- Graphique de l'évolution de la masse salariale (6 derniers mois).
+- Liste des prochains paiements à effectuer.
+
+### 4.2 Gestion des entreprises
+- Créer, modifier, supprimer une entreprise.
+- Paramètres : logo, adresse, devise, type de période (mensuelle/hebdo/journalière).
+- Ajouter des utilisateurs (admin, caissier).
+
+### 4.3 Gestion des employés
+- Créer, modifier, supprimer un employé.
+- Champs : nom complet, poste, type de contrat (journalier, fixe, honoraire), taux/salaire, coordonnées bancaires.
+- Activer/désactiver un employé (vacataire en congé).
+- Filtrer les employés par statut, poste, contrat, actif/inactif.
+
+### 4.4 Cycles de paie (Pay Run)
+- Créer un cycle (mensuel, hebdo, journalier).
+- Générer automatiquement les bulletins (payslips).
+- Pour les journaliers : saisir le nombre de jours travaillés.
+- Statuts : brouillon, approuvé, clôturé.
+
+### 4.5 Bulletins de paie (Payslip)
+- Contenir : informations employé + entreprise, brut, déductions, net à payer.
+- Être modifiable tant que le cycle est en brouillon.
+- Être verrouillé après approbation du cycle.
+- Export PDF individuel ou en lot.
+
+### 4.6 Paiements
+- Enregistrer un paiement total ou partiel.
+- Modes : espèces, virement bancaire, Orange Money, Wave, etc.
+- Génération automatique de **reçus PDF**.
+- Statut du bulletin : payé, partiel, en attente.
+
+### 4.7 Génération de documents
+- **Reçu PDF** (après chaque paiement).
+- **Bulletin de paie PDF** (par employé ou en lot).
+- **Liste des paiements PDF** (par période).
+- **Liste des emargements PDF** (par période).
+- **Facture pro PDF** (optionnelle).
+
+### 4.8 Sécurité & permissions
+- Authentification (email/mot de passe).
+- Rôles et autorisations strictes (RBAC).
+- Super-admin : multi-entreprise.
+- Admin : entreprise unique.
+- Caissier : entreprise unique (paiements uniquement).
+
+## Contraintes techniques
+- **Backend** : Node.js.
+- **Frontend** : React + Tailwind CSS.
+- **Base de données** : MySQL.
+- **PDF** : libre choix.
+- **Sécurité** : Hashage des mots de passe.
+
+## Planning (sprints agiles)
+- **Sprint 0** : Setup projet, auth.
+- **Sprint 1** : Gestion des employés (+ filtres, activation/désactivation).
+- **Sprint 2** : Gestion des cycles de paie + bulletins.
+- **Sprint 3** : Gestion des paiements + PDF reçus.
+- **Sprint 4** : Dashboard KPI + graphiques.
+- **Sprint 5** : Tests, documentation, déploiement MVP.
+
+## Indicateurs de succès
+- L'entreprise peut gérer **100+ employés sans erreur**.
+- Génération des PDF **instantanée** (<2s par reçu).
+- Recherche et filtres employés **<1s**.
+- Dashboard en temps réel.
+- Satisfaction utilisateur (admins/caissiers) ≥ 90%.
 
 ## Architecture
 
-- **Backend**: API REST Node.js/Express avec authentification JWT, Prisma ORM et PostgreSQL
-- **Frontend**: Application React/Vite avec interface de connexion
-- **Base de données**: PostgreSQL
+- **Backend**: API REST Node.js/Express avec authentification JWT, Prisma ORM et MySQL
+- **Frontend**: Application React/Vite avec interface utilisateur
+- **Base de données**: MySQL
 - **Containerisation**: Docker et Docker Compose
 
-Ce modèle fournit une base solide pour ajouter des fonctionnalités métier à votre application.
+Cette application fournit une solution complète pour la gestion des salaires.
 
 ## Prérequis
 
@@ -17,7 +125,7 @@ Ce modèle fournit une base solide pour ajouter des fonctionnalités métier à 
 
 ## Lancement de l'application
 
-1. Clonez ou naviguez vers le répertoire du projet `auth-app`
+1. Clonez ou naviguez vers le répertoire du projet `projet-salaires`
 
 2. Lancez les services avec Docker Compose :
    ```bash
@@ -25,7 +133,7 @@ Ce modèle fournit une base solide pour ajouter des fonctionnalités métier à 
    ```
 
 3. Attendez que tous les services démarrent :
-   - Base de données PostgreSQL sur le port 5432
+   - Base de données MySQL sur le port 3306
    - Backend API sur le port 3000
    - Frontend React sur le port 3001
 
@@ -53,7 +161,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ### Authentification
 
-#### POST /api/auth/register
+#### POST /auth/register
 **Description**: Inscription d'un nouvel utilisateur. Pour SUPER_ADMIN, pas d'entreprise. Pour autres rôles, entrepriseId requis.
 
 **Authentification**: Non requise
@@ -85,7 +193,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Erreurs**: 400 (champs manquants), 400 (utilisateur existe)
 
-#### POST /api/auth/login
+#### POST /auth/login
 **Description**: Connexion utilisateur
 
 **Authentification**: Non requise
@@ -115,7 +223,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Erreurs**: 401 (credentials invalides)
 
-#### GET /api/auth/me
+#### GET /auth/me
 **Description**: Récupérer les informations de l'utilisateur connecté
 
 **Authentification**: Requise
@@ -138,7 +246,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ### Employés
 
-#### GET /api/employees
+#### GET /employees
 **Description**: Lister tous les employés de l'entreprise
 
 **Authentification**: Requise
@@ -166,7 +274,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 ]
 ```
 
-#### GET /api/employees/:id
+#### GET /employees/:id
 **Description**: Récupérer un employé par ID
 
 **Authentification**: Requise
@@ -179,7 +287,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Erreurs**: 404 (non trouvé)
 
-#### POST /api/employees
+#### POST /employees
 **Description**: Créer un nouvel employé
 
 **Authentification**: Requise
@@ -199,7 +307,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (201)**: Objet employé créé
 
-#### PUT /api/employees/:id
+#### PUT /employees/:id
 **Description**: Mettre à jour un employé
 
 **Authentification**: Requise
@@ -212,7 +320,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet employé mis à jour
 
-#### PATCH /api/employees/:id/activate
+#### PATCH /employees/:id/activate
 **Description**: Activer/désactiver un employé
 
 **Authentification**: Requise
@@ -230,7 +338,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet employé mis à jour
 
-#### POST /api/employees/filter
+#### POST /employees/filter
 **Description**: Filtrer les employés
 
 **Authentification**: Requise
@@ -250,7 +358,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ### Entreprises
 
-#### GET /api/entreprises
+#### GET /entreprises
 **Description**: Lister toutes les entreprises
 
 **Authentification**: Requise
@@ -273,7 +381,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 ]
 ```
 
-#### GET /api/entreprises/:id
+#### GET /entreprises/:id
 **Description**: Récupérer une entreprise par ID
 
 **Authentification**: Requise
@@ -284,7 +392,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet entreprise
 
-#### POST /api/entreprises
+#### POST /entreprises
 **Description**: Créer une nouvelle entreprise
 
 **Authentification**: Requise
@@ -304,7 +412,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (201)**: Objet entreprise créé
 
-#### PUT /api/entreprises/:id
+#### PUT /entreprises/:id
 **Description**: Mettre à jour une entreprise
 
 **Authentification**: Requise
@@ -317,7 +425,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet entreprise mis à jour
 
-#### DELETE /api/entreprises/:id
+#### DELETE /entreprises/:id
 **Description**: Supprimer une entreprise
 
 **Authentification**: Requise
@@ -328,13 +436,9 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (204)**: Aucun contenu
 
-
-
-
-
 ### Cycles de paie (Payruns)
 
-#### GET /api/payruns
+#### GET /payruns
 **Description**: Lister tous les cycles de paie de l'entreprise
 
 **Authentification**: Requise
@@ -355,7 +459,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 ]
 ```
 
-#### GET /api/payruns/:id
+#### GET /payruns/:id
 **Description**: Récupérer un cycle de paie par ID
 
 **Authentification**: Requise
@@ -366,7 +470,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet payrun
 
-#### POST /api/payruns
+#### POST /payruns
 **Description**: Créer un nouveau cycle de paie
 
 **Authentification**: Requise
@@ -382,7 +486,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (201)**: Objet payrun créé
 
-#### PUT /api/payruns/:id
+#### PUT /payruns/:id
 **Description**: Mettre à jour le statut d'un cycle de paie
 
 **Authentification**: Requise
@@ -400,7 +504,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet payrun mis à jour
 
-#### GET /api/payruns/:id/payslips
+#### GET /payruns/:id/payslips
 **Description**: Récupérer les bulletins de paie d'un cycle
 
 **Authentification**: Requise
@@ -413,7 +517,31 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ### Bulletins de paie (Payslips)
 
-#### GET /api/payslips/:id
+#### GET /payslips
+**Description**: Lister les bulletins de paie de l'entreprise
+
+**Authentification**: Requise
+
+**Rôles autorisés**: SUPER_ADMIN, ADMIN, CAISSIER
+
+**Réponse de succès (200)**:
+```json
+[
+  {
+    "id": "string",
+    "grossSalary": "number",
+    "deductions": "number",
+    "netSalary": "number",
+    "status": "EN_ATTENTE" | "PARTIEL" | "PAYE",
+    "createdAt": "date",
+    "updatedAt": "date",
+    "employeeId": "string",
+    "cycleId": "string"
+  }
+]
+```
+
+#### GET /payslips/:id
 **Description**: Récupérer un bulletin de paie par ID
 
 **Authentification**: Requise
@@ -440,7 +568,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 }
 ```
 
-#### PUT /api/payslips/:id
+#### PUT /payslips/:id
 **Description**: Mettre à jour un bulletin de paie
 
 **Authentification**: Requise
@@ -460,8 +588,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Objet payslip mis à jour
 
-#### GET /api/payslips/:id/payments
-
+#### GET /payslips/:id/payments
 **Description**: Récupérer les paiements d'un bulletin
 
 **Authentification**: Requise
@@ -472,15 +599,9 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (200)**: Liste de payments
 
-
-
-
-
-
-
 ### Paiements (Payments)
 
-#### POST /api/payments
+#### POST /payments
 **Description**: Créer un nouveau paiement
 
 **Authentification**: Requise
@@ -499,7 +620,29 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 **Réponse de succès (201)**: Objet payment créé
 
-#### GET /api/payments/:id
+#### GET /payments
+**Description**: Lister les paiements de l'entreprise
+
+**Authentification**: Requise
+
+**Rôles autorisés**: SUPER_ADMIN, ADMIN, CAISSIER
+
+**Réponse de succès (200)**:
+```json
+[
+  {
+    "id": "string",
+    "amount": "number",
+    "mode": "string",
+    "paymentDate": "date",
+    "receiptUrl": "string" | null,
+    "payslipId": "string",
+    "caissierId": "string"
+  }
+]
+```
+
+#### GET /payments/:id
 **Description**: Récupérer un paiement par ID
 
 **Authentification**: Requise
@@ -523,7 +666,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 }
 ```
 
-#### GET /api/payments/:id/receipt
+#### GET /payments/:id/receipt
 **Description**: Récupérer le reçu d'un paiement
 
 **Authentification**: Requise
@@ -541,7 +684,7 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ### Santé
 
-#### GET /api/health
+#### GET /health
 **Description**: Vérifier la santé de l'API
 
 **Authentification**: Non requise
@@ -555,32 +698,34 @@ L'API utilise des tokens JWT pour l'authentification. Tous les endpoints (sauf l
 
 ## Endpoints API (résumé)
 
-- `POST /api/auth/register` : Inscription d'un nouvel utilisateur
-- `POST /api/auth/login` : Connexion utilisateur
-- `GET /api/auth/me` : Informations utilisateur connecté
-- `GET /api/employees` : Lister employés
-- `GET /api/employees/:id` : Détails employé
-- `POST /api/employees` : Créer employé
-- `PUT /api/employees/:id` : Mettre à jour employé
-- `PATCH /api/employees/:id/activate` : Activer/désactiver employé
-- `POST /api/employees/filter` : Filtrer employés
-- `GET /api/entreprises` : Lister entreprises
-- `GET /api/entreprises/:id` : Détails entreprise
-- `POST /api/entreprises` : Créer entreprise
-- `PUT /api/entreprises/:id` : Mettre à jour entreprise
-- `DELETE /api/entreprises/:id` : Supprimer entreprise
-- `GET /api/payruns` : Lister cycles de paie
-- `GET /api/payruns/:id` : Détails cycle de paie
-- `POST /api/payruns` : Créer cycle de paie
-- `PUT /api/payruns/:id` : Mettre à jour statut cycle
-- `GET /api/payruns/:id/payslips` : Bulletins d'un cycle
-- `GET /api/payslips/:id` : Détails bulletin
-- `PUT /api/payslips/:id` : Mettre à jour bulletin
-- `GET /api/payslips/:id/payments` : Paiements d'un bulletin
-- `POST /api/payments` : Créer paiement
-- `GET /api/payments/:id` : Détails paiement
-- `GET /api/payments/:id/receipt` : Reçu de paiement
-- `GET /api/health` : Santé de l'API
+- `POST /auth/register` : Inscription d'un nouvel utilisateur
+- `POST /auth/login` : Connexion utilisateur
+- `GET /auth/me` : Informations utilisateur connecté
+- `GET /employees` : Lister employés
+- `GET /employees/:id` : Détails employé
+- `POST /employees` : Créer employé
+- `PUT /employees/:id` : Mettre à jour employé
+- `PATCH /employees/:id/activate` : Activer/désactiver employé
+- `POST /employees/filter` : Filtrer employés
+- `GET /entreprises` : Lister entreprises
+- `GET /entreprises/:id` : Détails entreprise
+- `POST /entreprises` : Créer entreprise
+- `PUT /entreprises/:id` : Mettre à jour entreprise
+- `DELETE /entreprises/:id` : Supprimer entreprise
+- `GET /payruns` : Lister cycles de paie
+- `GET /payruns/:id` : Détails cycle de paie
+- `POST /payruns` : Créer cycle de paie
+- `PUT /payruns/:id` : Mettre à jour statut cycle
+- `GET /payruns/:id/payslips` : Bulletins d'un cycle
+- `GET /payslips` : Lister bulletins
+- `GET /payslips/:id` : Détails bulletin
+- `PUT /payslips/:id` : Mettre à jour bulletin
+- `GET /payslips/:id/payments` : Paiements d'un bulletin
+- `POST /payments` : Créer paiement
+- `GET /payments` : Lister paiements
+- `GET /payments/:id` : Détails paiement
+- `GET /payments/:id/receipt` : Reçu de paiement
+- `GET /health` : Santé de l'API
 
 ## Développement local (optionnel)
 
@@ -600,7 +745,7 @@ npm run dev
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 Assurez-vous de mettre à jour `VITE_API_BASE_URL` dans `frontend/.env` pour pointer vers `http://localhost:3000`.
@@ -608,26 +753,98 @@ Assurez-vous de mettre à jour `VITE_API_BASE_URL` dans `frontend/.env` pour poi
 ## Structure du projet
 
 ```
-auth-app/
+projet-salaires/
 ├── backend/
-│   ├── prisma/schema.prisma
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
 │   ├── src/
-│   │   ├── index.js
-│   │   ├── routes/auth.js
-│   │   ├── middleware/auth.js
-│   │   └── utils/hash.js
+│   │   ├── controllers/
+│   │   │   ├── authController.ts
+│   │   │   ├── employeeController.ts
+│   │   │   ├── entrepriseController.ts
+│   │   │   ├── payrunController.ts
+│   │   │   ├── payslipController.ts
+│   │   │   └── paymentController.ts
+│   │   ├── middleware/
+│   │   │   └── auth.ts
+│   │   ├── repositories/
+│   │   │   ├── employeeRepository.ts
+│   │   │   ├── entrepriseRepository.ts
+│   │   │   ├── payrunRepository.ts
+│   │   │   ├── payslipRepository.ts
+│   │   │   ├── paymentRepository.ts
+│   │   │   └── userRepository.ts
+│   │   ├── routes/
+│   │   │   ├── auth.ts
+│   │   │   ├── employees.ts
+│   │   │   ├── entreprises.ts
+│   │   │   ├── payruns.ts
+│   │   │   ├── payslips.ts
+│   │   │   └── payments.ts
+│   │   ├── services/
+│   │   │   ├── authService.ts
+│   │   │   ├── employeeService.ts
+│   │   │   ├── entrepriseService.ts
+│   │   │   ├── payrunService.ts
+│   │   │   ├── payslipService.ts
+│   │   │   └── paymentService.ts
+│   │   ├── utils/
+│   │   │   └── hash.ts
+│   │   └── index.ts
 │   ├── package.json
-│   ├── Dockerfile
-│   └── .env.example
-├── frontend/
-│   ├── public/index.html
-│   ├── src/
-│   │   ├── index.jsx
-│   │   ├── App.jsx
-│   │   ├── pages/Login.jsx
-│   │   └── api.js
-│   ├── package.json
+│   ├── tsconfig.json
 │   ├── Dockerfile
 │   └── .dockerignore
+├── frontend/
+│   ├── public/
+│   │   ├── favicon.ico
+│   │   ├── placeholder.svg
+│   │   └── robots.txt
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── admin/
+│   │   │   │   ├── EmployeeForm.jsx
+│   │   │   │   ├── EmployeeProfileDialog.jsx
+│   │   │   │   ├── PayrunForm.jsx
+│   │   │   │   ├── PayslipDetailsDialog.jsx
+│   │   │   │   ├── PayslipForm.jsx
+│   │   │   │   └── ...
+│   │   │   ├── layout/
+│   │   │   │   ├── dashboard-layout.jsx
+│   │   │   │   └── sidebar.jsx
+│   │   │   ├── ui/
+│   │   │   │   └── (composants UI)
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── contexts/
+│   │   │   └── AuthContext.jsx
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   │   └── api.js
+│   │   ├── pages/
+│   │   │   ├── admin/
+│   │   │   │   ├── dashboard.jsx
+│   │   │   │   ├── employes.jsx
+│   │   │   │   ├── payruns.jsx
+│   │   │   │   └── payslips.jsx
+│   │   │   ├── super-admin/
+│   │   │   │   ├── dashboard.jsx
+│   │   │   │   └── entreprises.jsx
+│   │   │   ├── caissier/
+│   │   │   │   ├── dashboard.jsx
+│   │   │   │   └── paiements.jsx
+│   │   │   ├── login.jsx
+│   │   │   └── ...
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── components.json
+│   ├── eslint.config.js
+│   └── .gitignore
 ├── docker-compose.yml
-└── README.md# salaire-projet
+├── gestion salaire.md
+├── TODO.md
+└── README.md

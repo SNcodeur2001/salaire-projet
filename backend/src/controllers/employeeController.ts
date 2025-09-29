@@ -37,6 +37,25 @@ export class EmployeeController {
 
   async createEmployee(req: Request, res: Response) {
     try {
+      const { firstName, lastName, poste, contract, baseSalary } = req.body;
+
+      // Validation détaillée
+      if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
+        return res.status(400).json({ error: 'Le prénom est requis et doit être une chaîne non vide' });
+      }
+      if (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0) {
+        return res.status(400).json({ error: 'Le nom est requis et doit être une chaîne non vide' });
+      }
+      if (!poste || typeof poste !== 'string' || poste.trim().length === 0) {
+        return res.status(400).json({ error: 'Le poste est requis et doit être une chaîne non vide' });
+      }
+      if (!contract || !['JOURNALIER', 'FIXE', 'HONORAIRE'].includes(contract)) {
+        return res.status(400).json({ error: 'Le type de contrat doit être JOURNALIER, FIXE ou HONORAIRE' });
+      }
+      if (baseSalary === undefined || baseSalary === null || typeof baseSalary !== 'number' || baseSalary <= 0) {
+        return res.status(400).json({ error: 'Le salaire de base doit être un nombre positif' });
+      }
+
       let entrepriseId = req.user?.entrepriseId;
       if (req.user?.role === 'SUPER_ADMIN') {
         entrepriseId = req.body.entrepriseId;
@@ -44,6 +63,7 @@ export class EmployeeController {
       if (!entrepriseId) {
         return res.status(400).json({ error: 'Entreprise non trouvée' });
       }
+
       const employee = await employeeService.createEmployee({ ...req.body, entrepriseId });
       res.status(201).json(employee);
     } catch (error: any) {

@@ -1,39 +1,52 @@
 import * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/enhanced-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Calculator, Eye, EyeOff, LogIn } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+// Validation schema
+const loginSchema = z.object({
+  email: z.string().min(1, "L'adresse email est requise").email("Format d'email invalide"),
+  password: z.string().min(1, "Le mot de passe est requis").min(6, "Le mot de passe doit contenir au moins 6 caractères")
+})
 
 const Login = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
   const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleInputChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
+  const form = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const onSubmit = async (data) => {
     setLoading(true)
 
     try {
-      const user = await login(formData)
+      const user = await login(data)
       // Navigate based on role
       if (user.role === 'SUPER_ADMIN') {
         navigate('/super-admin')
@@ -59,17 +72,6 @@ const Login = () => {
     }
   }
 
-  const demoUsers = [
-    { role: 'Super Admin', email: 'superadmin@payrollpro.com', password: 'demo123' },
-    { role: 'Administrateur', email: 'admin@entreprise.com', password: 'demo123' },
-    { role: 'Caissier', email: 'caissier@entreprise.com', password: 'demo123' }
-  ]
-
-  const quickLogin = (email, password) => {
-    setFormData({ email, password })
-    // Auto submit after setting
-    setTimeout(() => handleSubmit(new Event('submit')), 100)
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 p-4">
@@ -98,81 +100,69 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
-                <Input
-                  id="email"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
                   name="email"
-                  type="email"
-                  placeholder="votre@email.com"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2 relative">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="h-11 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresse email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="votre@email.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </button>
-              </div>
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="h-11 pr-10"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                type="submit"
-                variant="gradient"
-                size="lg"
-                className="w-full"
-                loading={loading}
-                icon={!loading ? <LogIn className="h-4 w-4" /> : undefined}
-              >
-                {loading ? "Connexion..." : "Se connecter"}
-              </Button>
-            </form>
-
-            {/* Demo Users */}
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground text-center mb-3">
-                Comptes de démonstration
-              </p>
-              <div className="space-y-2">
-                {demoUsers.map((user, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => quickLogin(user.email, user.password)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors",
-                      "flex items-center justify-between text-sm"
-                    )}
-                  >
-                    <div>
-                      <p className="font-medium">{user.role}</p>
-                      <p className="text-muted-foreground text-xs">{user.email}</p>
-                    </div>
-                    <LogIn className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                ))}
-              </div>
-            </div>
+                <Button
+                  type="submit"
+                  variant="gradient"
+                  size="lg"
+                  className="w-full"
+                  loading={loading}
+                  icon={!loading ? <LogIn className="h-4 w-4" /> : undefined}
+                >
+                  {loading ? "Connexion..." : "Se connecter"}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 

@@ -38,6 +38,22 @@ export class PayslipController {
   async updatePayslip(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const { grossSalary, deductions, netSalary, notes } = req.body;
+
+      // Validation détaillée
+      if (grossSalary !== undefined && (typeof grossSalary !== 'number' || grossSalary <= 0)) {
+        return res.status(400).json({ error: 'Le salaire brut doit être un nombre positif' });
+      }
+      if (deductions !== undefined && (typeof deductions !== 'number' || deductions < 0)) {
+        return res.status(400).json({ error: 'Les charges ne peuvent pas être négatives' });
+      }
+      if (netSalary !== undefined && (typeof netSalary !== 'number' || netSalary <= 0)) {
+        return res.status(400).json({ error: 'Le salaire net doit être un nombre positif' });
+      }
+      if (notes !== undefined && typeof notes !== 'string') {
+        return res.status(400).json({ error: 'Les notes doivent être une chaîne de caractères' });
+      }
+
       let entrepriseId = req.user?.entrepriseId;
       if (req.user?.role === 'SUPER_ADMIN') {
         entrepriseId = req.query.entrepriseId as string;
@@ -45,6 +61,7 @@ export class PayslipController {
       if (!entrepriseId) {
         return res.status(400).json({ error: 'Entreprise non trouvée' });
       }
+
       const payslip = await payslipService.updatePayslip(id, entrepriseId, req.body);
       res.json(payslip);
     } catch (error: any) {
