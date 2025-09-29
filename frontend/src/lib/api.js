@@ -3,6 +3,11 @@ const API_BASE_URL = 'http://localhost:4000/api';
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
+    this.onUnauthorized = null;
+  }
+
+  setOnUnauthorized(callback) {
+    this.onUnauthorized = callback;
   }
 
   async request(endpoint, options = {}) {
@@ -21,9 +26,18 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      if (response.status === 401) {
+        // Token is invalid or expired, trigger logout
+        if (this.onUnauthorized) {
+          this.onUnauthorized();
+        }
+        const data = await response.json();
+        throw new Error(data.error || 'Non autorisé');
+      }
+
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'API request failed');
+        throw new Error(data.error || data.message || 'API request failed');
       }
 
       if (response.status === 204) {
