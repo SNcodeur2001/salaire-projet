@@ -26,7 +26,7 @@ import NotFound from "./pages/NotFound.jsx";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { logout, user } = useAuth();
+  const { logout, user, entreprise } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -51,14 +51,14 @@ const AppContent = () => {
       {/* Super Admin Routes */}
       <Route path="/super-admin" element={
         <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-          <DashboardLayout userRole="super-admin" userName="Super Admin" onLogout={handleLogout}>
+          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
             <SuperAdminDashboard />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/super-admin/entreprises" element={
         <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-          <DashboardLayout userRole="super-admin" userName="Super Admin" onLogout={handleLogout}>
+          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
             <SuperAdminEntreprises />
           </DashboardLayout>
         </ProtectedRoute>
@@ -68,28 +68,28 @@ const AppContent = () => {
       {/* Admin Routes */}
       <Route path="/admin" element={
         <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" onLogout={handleLogout}>
+          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
             <AdminDashboard />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/employes" element={
         <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" onLogout={handleLogout}>
+          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
             <AdminEmployees />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/payruns" element={
         <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" onLogout={handleLogout}>
+          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
             <AdminPayruns />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/payslips" element={
         <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" onLogout={handleLogout}>
+          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
             <AdminPayslips />
           </DashboardLayout>
         </ProtectedRoute>
@@ -98,21 +98,21 @@ const AppContent = () => {
       {/* Caissier Routes */}
       <Route path="/caissier" element={
         <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" onLogout={handleLogout}>
+          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
             <CaissierDashboard />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/caissier/payslips" element={
         <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" onLogout={handleLogout}>
+          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
             <CaissierPayslips />
           </DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/caissier/paiements" element={
         <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" onLogout={handleLogout}>
+          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
             <CaissierPaiements />
           </DashboardLayout>
         </ProtectedRoute>

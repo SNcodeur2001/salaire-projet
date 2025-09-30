@@ -2,12 +2,19 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 import userRepository from '../repositories/userRepository.js';
+import entrepriseRepository from '../repositories/entrepriseRepository.js';
 
 interface UserResponse {
   id: string;
   email: string;
   role: string;
   entrepriseId?: string | null;
+  entreprise?: {
+    id: string;
+    name: string;
+    logo?: string | null;
+    color?: string | null;
+  } | null;
 }
 
 interface AuthResult {
@@ -69,7 +76,27 @@ export class AuthService {
     if (!user) {
       throw new Error('Utilisateur non trouvé');
     }
-    return { id: user.id, email: user.email, role: user.role, entrepriseId: user.entrepriseId };
+
+    let entreprise = null;
+    if (user.entrepriseId) {
+      const entrepriseData = await entrepriseRepository.findById(user.entrepriseId);
+      if (entrepriseData) {
+        entreprise = {
+          id: entrepriseData.id,
+          name: entrepriseData.name,
+          logo: entrepriseData.logo,
+          color: entrepriseData.color,
+        };
+      }
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      entrepriseId: user.entrepriseId,
+      entreprise
+    };
   }
 }
 

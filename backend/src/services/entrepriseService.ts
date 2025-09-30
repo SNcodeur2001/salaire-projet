@@ -17,6 +17,7 @@ export class EntrepriseService {
   async createEntreprise(data: {
     name: string;
     logo?: string;
+    color?: string;
     address?: string;
     currency: string;
     periodType: string;
@@ -34,6 +35,7 @@ export class EntrepriseService {
     const entreprise = await entrepriseRepository.create({
       name: data.name,
       logo: data.logo,
+      color: data.color,
       address: data.address,
       currency: data.currency,
       periodType: data.periodType,
@@ -60,6 +62,7 @@ export class EntrepriseService {
   async updateEntreprise(id: string, data: Partial<{
     name: string;
     logo?: string;
+    color?: string;
     address?: string;
     currency: string;
     periodType: string;

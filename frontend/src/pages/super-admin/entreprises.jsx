@@ -53,11 +53,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
 
 const SuperAdminEntreprises = () => {
-  const { user } = useAuth()
+  const { user, setEntrepriseForAdminView } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [createDialog, setCreateDialog] = useState(false)
   const [editDialog, setEditDialog] = useState({ open: false, entreprise: null })
@@ -68,6 +70,7 @@ const SuperAdminEntreprises = () => {
       name: "",
       address: "",
       logo: "",
+      color: "",
       currency: "EUR",
       periodType: "mensuelle",
       adminFirstName: "",
@@ -92,6 +95,7 @@ const SuperAdminEntreprises = () => {
       name: data.name,
       address: data.address,
       logo: data.logo || undefined,
+      color: data.color || undefined,
       currency: data.currency,
       periodType: data.periodType,
       adminFirstName: data.adminFirstName,
@@ -116,6 +120,7 @@ const SuperAdminEntreprises = () => {
       name: data.name,
       address: data.address,
       logo: data.logo || undefined,
+      color: data.color || undefined,
       currency: data.currency,
       periodType: data.periodType,
     }),
@@ -143,7 +148,7 @@ const SuperAdminEntreprises = () => {
     },
   })
 
-  // Handle create
+  // Handle create or update
   const onSubmit = (data) => {
     if (editDialog.entreprise) {
       updateMutation.mutate({ id: editDialog.entreprise.id, data })
@@ -159,6 +164,7 @@ const SuperAdminEntreprises = () => {
       name: entreprise.name,
       address: entreprise.address || "",
       logo: entreprise.logo || "",
+      color: entreprise.color || "",
       currency: entreprise.currency,
       periodType: entreprise.periodType,
       adminFirstName: "",
@@ -177,6 +183,12 @@ const SuperAdminEntreprises = () => {
     if (deleteDialog.entreprise) {
       deleteMutation.mutate(deleteDialog.entreprise.id)
     }
+  }
+
+  // Handle view admin interface redirection
+  const handleViewAdmin = (entreprise) => {
+    setEntrepriseForAdminView(entreprise)
+    navigate('/admin')
   }
 
   const columns = [
@@ -231,9 +243,9 @@ const SuperAdminEntreprises = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleViewAdmin(row)}>
               <Eye className="mr-2 h-4 w-4" />
-              Voir détails
+              Voir plus
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row)}>
               <Edit className="mr-2 h-4 w-4" />
@@ -409,6 +421,19 @@ const SuperAdminEntreprises = () => {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Couleur principale (hex)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="#3b82f6" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="address"

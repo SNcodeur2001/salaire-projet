@@ -3,7 +3,7 @@ import { Sidebar } from "./sidebar"
 import { cn } from "@/lib/utils"
 
 const DashboardLayout = React.forwardRef(
-  ({ children, userRole, userName, onLogout, className }, ref) => {
+  ({ children, userRole, userName, entreprise, onLogout, className }, ref) => {
     const [isCollapsed, setIsCollapsed] = React.useState(false)
 
     return (
@@ -13,6 +13,7 @@ const DashboardLayout = React.forwardRef(
           isCollapsed={isCollapsed}
           onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
           userName={userName}
+          entreprise={entreprise}
           onLogout={onLogout}
         />
         

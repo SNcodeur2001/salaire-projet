@@ -14,6 +14,7 @@ export class EntrepriseRepository {
   async create(data: {
     name: string;
     logo?: string;
+    color?: string;
     address?: string;
     currency: string;
     periodType: string;

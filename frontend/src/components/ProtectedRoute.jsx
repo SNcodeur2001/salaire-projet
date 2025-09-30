@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, entreprise } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -18,7 +18,10 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+    // Allow SUPER_ADMIN to access ADMIN routes if entreprise is set
+    if (!(user.role === 'SUPER_ADMIN' && allowedRoles.includes('ADMIN') && entreprise)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;

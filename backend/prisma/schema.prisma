@@ -52,6 +52,7 @@ model Entreprise {
   id          String   @id @default(uuid())
   name        String
   logo        String?
+  color       String?  // Couleur principale de l'entreprise (hex code)
   address     String?
   currency    String
   periodType  String    // mensuelle / hebdo / journalière

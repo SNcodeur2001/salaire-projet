@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useAuth } from "@/contexts/AuthContext"
@@ -37,6 +37,20 @@ const employeeSchema = z.object({
   baseSalary: z.coerce.number().positive("Le salaire doit être positif"),
 })
 
+// Predefined posts for searchable dropdown
+const predefinedPosts = [
+  "Développeur",
+  "Designer",
+  "Chef de projet",
+  "Analyste",
+  "Consultant",
+  "Technicien",
+  "Administrateur",
+  "Commercial",
+  "Support",
+  "RH",
+]
+
 export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, onCancel }) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -48,6 +62,25 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
     },
   })
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  // Watch contract field for dynamic salary label
+  const contract = useWatch({
+    control: form.control,
+    name: "contract",
+    defaultValue: defaultValues.contract || "FIXE",
+  })
+
+  const getSalaryLabel = () => {
+    switch (contract) {
+      case "JOURNALIER":
+        return "Salaire journalier (€)"
+      case "HONORAIRE":
+        return "Honoraire (€)"
+      case "FIXE":
+      default:
+        return "Salaire mensuel (€)"
+    }
+  }
 
   const onSubmit = async (data) => {
     setIsSubmitting(true)
@@ -86,7 +119,7 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -123,7 +156,18 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
             <FormItem>
               <FormLabel>Poste</FormLabel>
               <FormControl>
-                <Input placeholder="Développeur" {...field} />
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un poste" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {predefinedPosts.map((post) => (
+                      <SelectItem key={post} value={post}>
+                        {post}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -137,12 +181,10 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Type de contrat</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner..." />
-                    </SelectTrigger>
-                  </FormControl>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner..." />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="JOURNALIER">Journalier</SelectItem>
                     <SelectItem value="FIXE">Fixe</SelectItem>
@@ -158,7 +200,7 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
             name="baseSalary"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Salaire de base (€)</FormLabel>
+                <FormLabel>{getSalaryLabel()}</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="3000" {...field} />
                 </FormControl>
