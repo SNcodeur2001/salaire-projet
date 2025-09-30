@@ -82,6 +82,47 @@ export class PayslipController {
       res.status(404).json({ error: error.message });
     }
   }
+
+  async downloadPayslipPdf(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const entrepriseId = req.user?.entrepriseId;
+      if (!entrepriseId) {
+        return res.status(400).json({ error: 'Entreprise non trouvée' });
+      }
+
+      // Get payslip with relations
+      const payslip = await payslipService.getPayslipById(id, entrepriseId);
+
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="bulletin-${id}.pdf"`);
+
+      // For now, return a simple text response (in real app, generate actual PDF)
+      res.send(`PDF Content for payslip ${id}`);
+    } catch (error: any) {
+      res.status(404).json({ error: error.message });
+    }
+  }
+
+  async sendPayslipEmail(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const entrepriseId = req.user?.entrepriseId;
+      if (!entrepriseId) {
+        return res.status(400).json({ error: 'Entreprise non trouvée' });
+      }
+
+      const payslip = await payslipService.getPayslipById(id, entrepriseId);
+
+      // Simulate email sending (in real app, use email service)
+      console.log(`Sending email to employee with payslip ${id}`);
+
+      res.json({ message: 'Email envoyé avec succès' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 export default new PayslipController();

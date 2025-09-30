@@ -18,6 +18,7 @@ const roleMenuItems = {
   'super-admin': [
     { path: '/super-admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/super-admin/entreprises', label: 'Entreprises', icon: Building2 },
+    { path: '/super-admin/users', label: 'Utilisateurs', icon: Users },
   ],
   'admin': [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },

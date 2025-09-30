@@ -96,6 +96,23 @@ export class PayrunController {
       res.status(404).json({ error: error.message });
     }
   }
+
+  async generatePayslips(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      let entrepriseId = req.user?.entrepriseId;
+      if (req.user?.role === 'SUPER_ADMIN') {
+        entrepriseId = req.body.entrepriseId;
+      }
+      if (!entrepriseId) {
+        return res.status(400).json({ error: 'Entreprise non trouvée' });
+      }
+      const payslips = await payrunService.generatePayslips(id, entrepriseId);
+      res.json(payslips);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 export default new PayrunController();

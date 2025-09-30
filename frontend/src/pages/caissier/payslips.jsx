@@ -1,13 +1,17 @@
 import * as React from "react"
 import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Search, 
-  FileText, 
+import {
+  Search,
+  FileText,
   Euro,
   Calendar,
   MoreHorizontal,
@@ -32,74 +36,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { PaymentForm } from "@/components/admin/PaymentForm"
 
 const CaissierPayslips = () => {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
+  const [paymentDialog, setPaymentDialog] = useState({ open: false, payslipId: null })
+
+  // Fetch payslips
+  const { data: payslipsData = [], isLoading, error } = useQuery({
+    queryKey: ['payslips', user?.entrepriseId],
+    queryFn: () => apiClient.getPayslips({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user,
+  })
 
   const columns = [
-    { 
-      key: 'employee', 
+    {
+      key: 'employee',
       title: 'Employé',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
+      render: (value, row) => {
+        const fullName = `${row.employee.firstName} ${row.employee.lastName}`;
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              {fullName.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium">{fullName}</p>
+              <p className="text-sm text-muted-foreground">{row.employee.position}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">{value}</p>
-            <p className="text-sm text-muted-foreground">{row.position}</p>
-          </div>
-        </div>
-      )
+        );
+      }
     },
-    { 
-      key: 'period', 
+    {
+      key: 'cycle',
       title: 'Période',
-      render: (value) => (
+      render: (value, row) => (
         <div className="flex items-center space-x-1">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
+          <span className="text-sm">{row.cycle.period}</span>
         </div>
       )
     },
-    { 
-      key: 'netSalary', 
+    {
+      key: 'netSalary',
       title: 'Montant Net',
       render: (value) => (
         <div className="flex items-center space-x-1">
           <Euro className="h-4 w-4 text-success" />
-          <span className="font-bold text-success">€{value.toLocaleString()}</span>
+          <span className="font-bold text-success">€{value?.toLocaleString()}</span>
         </div>
       )
     },
-    { 
-      key: 'dueDate', 
-      title: 'Échéance',
-      render: (value, row) => (
-        <span className={`text-sm ${
-          row.urgent ? 'text-destructive font-medium' : 
-          row.priority === 'high' ? 'text-warning font-medium' : ''
-        }`}>
-          {value}
-        </span>
-      )
-    },
-    { 
-      key: 'paymentStatus', 
+    {
+      key: 'status',
       title: 'Statut Paiement',
       render: (value) => (
-        <Badge 
+        <Badge
           variant={
-            value === 'paid' ? 'default' : 
-            value === 'pending' ? 'secondary' : 
+            value === 'PAYE' ? 'default' :
+            value === 'EN_ATTENTE' ? 'secondary' :
             'destructive'
           }
         >
-          {value === 'paid' ? (
+          {value === 'PAYE' ? (
             <><CheckCircle className="mr-1 h-3 w-3" />Payé</>
-          ) : value === 'pending' ? (
+          ) : value === 'EN_ATTENTE' ? (
             <><Clock className="mr-1 h-3 w-3" />En attente</>
           ) : (
             <><AlertCircle className="mr-1 h-3 w-3" />Erreur</>
@@ -107,25 +122,8 @@ const CaissierPayslips = () => {
         </Badge>
       )
     },
-    { 
-      key: 'priority', 
-      title: 'Priorité',
-      render: (value) => (
-        <Badge 
-          variant={
-            value === 'urgent' ? 'destructive' : 
-            value === 'high' ? 'secondary' : 
-            'outline'
-          }
-        >
-          {value === 'urgent' ? 'Urgent' : 
-           value === 'high' ? 'Élevée' : 
-           'Normale'}
-        </Badge>
-      )
-    },
-    { 
-      key: 'actions', 
+    {
+      key: 'actions',
       title: 'Actions',
       render: (_, row) => (
         <DropdownMenu>
@@ -139,10 +137,10 @@ const CaissierPayslips = () => {
               <Eye className="mr-2 h-4 w-4" />
               Voir détails
             </DropdownMenuItem>
-            {row.paymentStatus !== 'paid' && (
+            {row.status !== 'PAYE' && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPaymentDialog({ open: true, payslipId: row.id })}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   Traiter le paiement
                 </DropdownMenuItem>
@@ -154,141 +152,102 @@ const CaissierPayslips = () => {
     }
   ]
 
-  const payslipsData = [
-    {
-      employee: 'Sophie Leroy',
-      position: 'Designer UX/UI',
-      period: 'Février 2024',
-      netSalary: 2950,
-      dueDate: 'Aujourd\'hui',
-      paymentStatus: 'pending',
-      priority: 'urgent',
-      urgent: true,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Jean Moreau',
-      position: 'Développeur Junior',
-      period: 'Février 2024',
-      netSalary: 2280,
-      dueDate: 'Demain',
-      paymentStatus: 'pending',
-      priority: 'high',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Thomas Garcia',
-      position: 'Stagiaire Marketing',
-      period: 'Février 2024',
-      netSalary: 515,
-      dueDate: '2 jours',
-      paymentStatus: 'pending',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'cheque'
-    },
-    {
-      employee: 'Julien Simon',
-      position: 'Support Technique',
-      period: 'Février 2024',
-      netSalary: 2020,
-      dueDate: '3 jours',
-      paymentStatus: 'pending',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Émilie Laurent',
-      position: 'Comptable',
-      period: 'Février 2024',
-      netSalary: 2450,
-      dueDate: 'En retard',
-      paymentStatus: 'error',
-      priority: 'urgent',
-      urgent: true,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Marie Dubois',
-      position: 'Développeuse Senior',
-      period: 'Février 2024',
-      netSalary: 3420,
-      dueDate: '01/03/2024',
-      paymentStatus: 'paid',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Pierre Martin',
-      position: 'Chef de Projet',
-      period: 'Février 2024',
-      netSalary: 3900,
-      dueDate: '01/03/2024',
-      paymentStatus: 'paid',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Claire Bernard',
-      position: 'Analyste Business',
-      period: 'Février 2024',
-      netSalary: 3200,
-      dueDate: '01/03/2024',
-      paymentStatus: 'paid',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Nicolas Petit',
-      position: 'DevOps Engineer',
-      period: 'Février 2024',
-      netSalary: 3650,
-      dueDate: '01/03/2024',
-      paymentStatus: 'paid',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'virement'
-    },
-    {
-      employee: 'Isabelle Roux',
-      position: 'Responsable RH',
-      period: 'Février 2024',
-      netSalary: 4180,
-      dueDate: '01/03/2024',
-      paymentStatus: 'paid',
-      priority: 'normal',
-      urgent: false,
-      paymentMethod: 'cheque'
-    }
-  ]
-
   const filteredData = payslipsData.filter(payslip => {
-    const matchesSearch = payslip.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payslip.position.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || payslip.paymentStatus === statusFilter
-    const matchesPriority = priorityFilter === "all" || payslip.priority === priorityFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority
+    const employeeName = `${payslip.employee.firstName} ${payslip.employee.lastName}`.toLowerCase()
+    const matchesSearch = employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          payslip.employee.position.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === "all" ||
+      (statusFilter === "pending" && payslip.status === 'EN_ATTENTE') ||
+      (statusFilter === "paid" && payslip.status === 'PAYE') ||
+      (statusFilter === "error" && payslip.status !== 'PAYE' && payslip.status !== 'EN_ATTENTE')
+
+    return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: payslipsData.length,
-    paid: payslipsData.filter(p => p.paymentStatus === 'paid').length,
-    pending: payslipsData.filter(p => p.paymentStatus === 'pending').length,
-    error: payslipsData.filter(p => p.paymentStatus === 'error').length,
-    urgent: payslipsData.filter(p => p.priority === 'urgent').length,
+    paid: payslipsData.filter(p => p.status === 'PAYE').length,
+    pending: payslipsData.filter(p => p.status === 'EN_ATTENTE').length,
+    error: payslipsData.filter(p => p.status !== 'PAYE' && p.status !== 'EN_ATTENTE').length,
+    urgent: payslipsData.filter(p => {
+      // Consider urgent if created more than 30 days ago and not paid
+      const daysSinceCreation = (new Date() - new Date(p.createdAt)) / (1000 * 60 * 60 * 24)
+      return daysSinceCreation > 30 && p.status !== 'PAYE'
+    }).length,
     totalToPay: payslipsData
-      .filter(p => p.paymentStatus !== 'paid')
-      .reduce((sum, p) => sum + p.netSalary, 0),
+      .filter(p => p.status !== 'PAYE')
+      .reduce((sum, p) => sum + (p.netSalary || 0), 0),
     totalPaid: payslipsData
-      .filter(p => p.paymentStatus === 'paid')
-      .reduce((sum, p) => sum + p.netSalary, 0)
+      .filter(p => p.status === 'PAYE')
+      .reduce((sum, p) => sum + (p.netSalary || 0), 0)
+  }
+
+  // Error handling
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-semibold">Erreur de chargement</h3>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-64 bg-muted rounded"></div>
+            <div className="h-4 w-48 bg-muted rounded mt-2"></div>
+          </div>
+          <div className="h-10 w-40 bg-muted rounded"></div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="h-5 w-20 bg-muted rounded mb-2"></div>
+                <div className="h-8 w-16 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-6 w-32 bg-muted rounded"></div>
+                <div className="h-4 w-64 bg-muted rounded mt-2"></div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-10 w-64 bg-muted rounded"></div>
+                <div className="h-10 w-32 bg-muted rounded"></div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 p-4 border rounded">
+                  <div className="h-10 w-10 bg-muted rounded-full"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-32 bg-muted rounded"></div>
+                    <div className="h-3 w-24 bg-muted rounded"></div>
+                  </div>
+                  <div className="h-4 w-16 bg-muted rounded"></div>
+                  <div className="h-4 w-12 bg-muted rounded"></div>
+                  <div className="h-8 w-8 bg-muted rounded"></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -445,7 +404,6 @@ const CaissierPayslips = () => {
                   <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="paid">Payés</SelectItem>
-                  <SelectItem value="error">Erreurs</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -467,9 +425,33 @@ const CaissierPayslips = () => {
             columns={columns}
             data={filteredData}
             emptyMessage="Aucun bulletin de paie trouvé"
+            loading={isLoading}
+            error={error}
           />
         </CardContent>
       </Card>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialog.open} onOpenChange={(open) => setPaymentDialog({ open, payslipId: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enregistrer un paiement</DialogTitle>
+            <DialogDescription>
+              Saisissez les informations du paiement pour ce bulletin.
+            </DialogDescription>
+          </DialogHeader>
+          {paymentDialog.payslipId && (
+            <PaymentForm
+              payslipId={paymentDialog.payslipId}
+              onSuccess={() => {
+                setPaymentDialog({ open: false, payslipId: null })
+                queryClient.invalidateQueries({ queryKey: ['payslips', user?.entrepriseId] })
+              }}
+              onCancel={() => setPaymentDialog({ open: false, payslipId: null })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

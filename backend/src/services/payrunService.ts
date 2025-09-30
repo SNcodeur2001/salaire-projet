@@ -59,6 +59,23 @@ export class PayrunService {
     }
     return payslips;
   }
+
+  async generatePayslips(payrunId: string, entrepriseId: string) {
+    const payrun = await this.getPayrunById(payrunId, entrepriseId);
+
+    // Check if payrun is APPROUVE
+    if (payrun.status !== PayrunStatus.APPROUVE) {
+      throw new Error('Le cycle doit être approuvé pour générer les bulletins');
+    }
+
+    // Get all payslips for this payrun
+    const payslips = await payrunRepository.getPayslips(payrunId, entrepriseId);
+
+    // Update payrun status to CLOS
+    await payrunRepository.updateStatus(payrunId, entrepriseId, PayrunStatus.CLOS);
+
+    return payslips;
+  }
 }
 
 export default new PayrunService();

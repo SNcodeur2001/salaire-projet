@@ -1,22 +1,27 @@
 import * as React from "react"
 import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Plus, 
-  Search, 
-  Users, 
-  Shield, 
-  Building2, 
+import {
+  Plus,
+  Search,
+  Users,
+  Shield,
+  Building2,
   Mail,
   MoreHorizontal,
   Edit,
   Trash2,
   Eye,
-  UserCheck
+  UserCheck,
+  AlertCircle
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -25,75 +30,168 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { UserForm } from "@/components/admin/UserForm"
 
 const SuperAdminUsers = () => {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState("")
+  const [createDialog, setCreateDialog] = useState(false)
+  const [editDialog, setEditDialog] = useState({ open: false, user: null })
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null })
+
+  // Fetch users
+  const { data: usersData = [], isLoading, error } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => apiClient.getUsers(),
+    enabled: !!user,
+  })
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: (userData) => apiClient.register(userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: "Utilisateur créé", description: "L'utilisateur a été créé avec succès." })
+      setCreateDialog(false)
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" })
+    },
+  })
+
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }) => apiClient.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: "Utilisateur modifié", description: "L'utilisateur a été modifié avec succès." })
+      setEditDialog({ open: false, user: null })
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" })
+    },
+  })
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: (id) => apiClient.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: "Utilisateur supprimé", description: "L'utilisateur a été supprimé avec succès." })
+      setDeleteDialog({ open: false, user: null })
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" })
+    },
+  })
+
+  // Handle create
+  const handleCreate = () => {
+    setCreateDialog(true)
+  }
+
+  // Handle edit
+  const handleEdit = (user) => {
+    setEditDialog({ open: true, user })
+  }
+
+  // Handle delete
+  const handleDelete = (user) => {
+    setDeleteDialog({ open: true, user })
+  }
+
+  const confirmDelete = () => {
+    if (deleteDialog.user) {
+      deleteUserMutation.mutate(deleteDialog.user.id)
+    }
+  }
 
   const columns = [
-    { 
-      key: 'name', 
+    {
+      key: 'name',
       title: 'Utilisateur',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium">{value}</p>
-            <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-              <Mail className="h-3 w-3" />
-              <span>{row.email}</span>
+      render: (value, row) => {
+        const fullName = `${row.firstName || 'Utilisateur'} ${row.lastName || row.id.slice(0, 8)}`;
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              {fullName.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium">{fullName}</p>
+              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                <Mail className="h-3 w-3" />
+                <span>{row.email}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
-    { 
-      key: 'role', 
+    {
+      key: 'role',
       title: 'Rôle',
       render: (value) => (
         <div className="flex items-center space-x-2">
-          {value === 'admin' ? (
+          {value === 'ADMIN' ? (
             <Shield className="h-4 w-4 text-primary" />
+          ) : value === 'SUPER_ADMIN' ? (
+            <Shield className="h-4 w-4 text-destructive" />
           ) : (
             <UserCheck className="h-4 w-4 text-success" />
           )}
-          <Badge variant={value === 'admin' ? 'default' : 'secondary'}>
-            {value === 'admin' ? 'Administrateur' : 'Caissier'}
+          <Badge variant={
+            value === 'SUPER_ADMIN' ? 'destructive' :
+            value === 'ADMIN' ? 'default' :
+            'secondary'
+          }>
+            {value === 'SUPER_ADMIN' ? 'Super Admin' :
+             value === 'ADMIN' ? 'Administrateur' :
+             'Caissier'}
           </Badge>
         </div>
       )
     },
-    { 
-      key: 'company', 
+    {
+      key: 'entreprise',
       title: 'Entreprise',
-      render: (value) => (
+      render: (value, row) => (
         <div className="flex items-center space-x-1">
           <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span>{value}</span>
+          <span>{row.entreprise?.name || 'Aucune'}</span>
         </div>
       )
     },
-    { 
-      key: 'lastLogin', 
-      title: 'Dernière connexion',
+    {
+      key: 'createdAt',
+      title: 'Créé le',
       render: (value) => (
-        <span className="text-sm text-muted-foreground">{value}</span>
+        <span className="text-sm text-muted-foreground">
+          {new Date(value).toLocaleDateString('fr-FR')}
+        </span>
       )
     },
-    { 
-      key: 'status', 
+    {
+      key: 'isActive',
       title: 'Statut',
       render: (value) => (
-        <Badge 
-          variant={value === 'active' ? 'default' : value === 'pending' ? 'secondary' : 'destructive'}
-        >
-          {value === 'active' ? 'Actif' : value === 'pending' ? 'En attente' : 'Inactif'}
+        <Badge variant={value ? 'default' : 'destructive'}>
+          {value ? 'Actif' : 'Inactif'}
         </Badge>
       )
     },
-    { 
-      key: 'actions', 
+    {
+      key: 'actions',
       title: 'Actions',
       render: (_, row) => (
         <DropdownMenu>
@@ -107,12 +205,15 @@ const SuperAdminUsers = () => {
               <Eye className="mr-2 h-4 w-4" />
               Voir profil
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEdit(row)}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => handleDelete(row)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
             </DropdownMenuItem>
@@ -122,101 +223,85 @@ const SuperAdminUsers = () => {
     }
   ]
 
-  const usersData = [
-    {
-      name: 'Marie Dubois',
-      email: 'marie.dubois@techcorp.fr',
-      role: 'admin',
-      company: 'TechCorp SARL',
-      lastLogin: '2 heures',
-      status: 'active'
-    },
-    {
-      name: 'Pierre Martin',
-      email: 'pierre.martin@buildpro.fr',
-      role: 'admin',
-      company: 'BuildPro SA',
-      lastLogin: '1 jour',
-      status: 'active'
-    },
-    {
-      name: 'Sophie Leroy',
-      email: 'sophie.leroy@techcorp.fr',
-      role: 'caissier',
-      company: 'TechCorp SARL',
-      lastLogin: '30 minutes',
-      status: 'active'
-    },
-    {
-      name: 'Jean Moreau',
-      email: 'jean.moreau@retailmax.com',
-      role: 'admin',
-      company: 'RetailMax Ltd',
-      lastLogin: '3 jours',
-      status: 'active'
-    },
-    {
-      name: 'Claire Bernard',
-      email: 'claire.bernard@healthcare.fr',
-      role: 'admin',
-      company: 'HealthCare Plus',
-      lastLogin: 'Jamais',
-      status: 'pending'
-    },
-    {
-      name: 'Nicolas Petit',
-      email: 'nicolas.petit@buildpro.fr',
-      role: 'caissier',
-      company: 'BuildPro SA',
-      lastLogin: '4 heures',
-      status: 'active'
-    },
-    {
-      name: 'Isabelle Roux',
-      email: 'isabelle.roux@eduserv.fr',
-      role: 'admin',
-      company: 'EduServ Academy',
-      lastLogin: '2 jours',
-      status: 'active'
-    },
-    {
-      name: 'Thomas Garcia',
-      email: 'thomas.garcia@retailmax.com',
-      role: 'caissier',
-      company: 'RetailMax Ltd',
-      lastLogin: '1 heure',
-      status: 'active'
-    },
-    {
-      name: 'Émilie Laurent',
-      email: 'emilie.laurent@logiflow.fr',
-      role: 'admin',
-      company: 'LogiFlow SARL',
-      lastLogin: '1 semaine',
-      status: 'inactive'
-    },
-    {
-      name: 'Julien Simon',
-      email: 'julien.simon@agrovert.fr',
-      role: 'caissier',
-      company: 'AgroVert Coopérative',
-      lastLogin: '5 heures',
-      status: 'active'
-    }
-  ]
-
   const filteredData = usersData.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.company.toLowerCase().includes(searchTerm.toLowerCase())
+    user.entreprise?.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const stats = {
     total: usersData.length,
-    admins: usersData.filter(u => u.role === 'admin').length,
-    caissiers: usersData.filter(u => u.role === 'caissier').length,
-    active: usersData.filter(u => u.status === 'active').length,
-    pending: usersData.filter(u => u.status === 'pending').length
+    admins: usersData.filter(u => u.role === 'ADMIN').length,
+    superAdmins: usersData.filter(u => u.role === 'SUPER_ADMIN').length,
+    caissiers: usersData.filter(u => u.role === 'CAISSIER').length,
+    active: usersData.filter(u => u.isActive).length,
+    inactive: usersData.filter(u => !u.isActive).length
+  }
+
+  // Error handling
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-semibold">Erreur de chargement</h3>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-64 bg-muted rounded"></div>
+            <div className="h-4 w-48 bg-muted rounded mt-2"></div>
+          </div>
+          <div className="h-10 w-40 bg-muted rounded"></div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="h-5 w-20 bg-muted rounded mb-2"></div>
+                <div className="h-8 w-16 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-6 w-32 bg-muted rounded"></div>
+                <div className="h-4 w-64 bg-muted rounded mt-2"></div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-10 w-64 bg-muted rounded"></div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 p-4 border rounded">
+                  <div className="h-10 w-10 bg-muted rounded-full"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-32 bg-muted rounded"></div>
+                    <div className="h-3 w-24 bg-muted rounded"></div>
+                  </div>
+                  <div className="h-4 w-16 bg-muted rounded"></div>
+                  <div className="h-4 w-12 bg-muted rounded"></div>
+                  <div className="h-8 w-8 bg-muted rounded"></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -229,13 +314,17 @@ const SuperAdminUsers = () => {
             Gestion des administrateurs et caissiers
           </p>
         </div>
-        <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>
+        <Button
+          variant="gradient"
+          icon={<Plus className="h-4 w-4" />}
+          onClick={handleCreate}
+        >
           Créer un utilisateur
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -243,6 +332,17 @@ const SuperAdminUsers = () => {
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
                 <p className="text-sm text-muted-foreground">Total</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="text-2xl font-bold text-destructive">{stats.superAdmins}</p>
+                <p className="text-sm text-muted-foreground">Super Admins</p>
               </div>
             </div>
           </CardContent>
@@ -283,10 +383,10 @@ const SuperAdminUsers = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="h-2 w-2 rounded-full bg-warning" />
+              <div className="h-2 w-2 rounded-full bg-destructive" />
               <div>
-                <p className="text-2xl font-bold text-warning">{stats.pending}</p>
-                <p className="text-sm text-muted-foreground">En attente</p>
+                <p className="text-2xl font-bold text-destructive">{stats.inactive}</p>
+                <p className="text-sm text-muted-foreground">Inactifs</p>
               </div>
             </div>
           </CardContent>
@@ -321,9 +421,68 @@ const SuperAdminUsers = () => {
             columns={columns}
             data={filteredData}
             emptyMessage="Aucun utilisateur trouvé"
+            loading={isLoading}
+            error={error}
           />
         </CardContent>
       </Card>
+
+      {/* Create User Dialog */}
+      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Créer un utilisateur</DialogTitle>
+            <DialogDescription>
+              Remplissez les informations pour créer un nouvel utilisateur.
+            </DialogDescription>
+          </DialogHeader>
+          <UserForm
+            onSuccess={() => setCreateDialog(false)}
+            onCancel={() => setCreateDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ open, user: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier l'utilisateur</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de l'utilisateur.
+            </DialogDescription>
+          </DialogHeader>
+          {editDialog.user && (
+            <UserForm
+              defaultValues={editDialog.user}
+              isEdit={true}
+              onSuccess={() => setEditDialog({ open: false, user: null })}
+              onCancel={() => setEditDialog({ open: false, user: null })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, user: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer l'utilisateur "{deleteDialog.user?.email}" ?
+              Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, user: null })}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} loading={deleteUserMutation.isPending}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

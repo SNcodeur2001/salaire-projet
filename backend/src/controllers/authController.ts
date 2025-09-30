@@ -11,28 +11,23 @@ export class AuthController {
 
       const currentUser = req.user;
 
-      // Allow creating SUPER_ADMIN without authentication
-      if (role === 'SUPER_ADMIN') {
-        if (currentUser && currentUser.role !== 'SUPER_ADMIN') {
-          return res.status(403).json({ error: 'Seul SUPER_ADMIN peut créer d\'autres SUPER_ADMIN' });
-        }
-        // For SUPER_ADMIN, entrepriseId should be null
-        const result = await authService.register(email, password, role, null);
-        return res.json(result);
-      }
-
-      // For other roles, authentication is required
+      // Authentication is now required for all user creation
       if (!currentUser) {
-        return res.status(401).json({ error: 'Authentification requise pour créer cet utilisateur' });
+        return res.status(401).json({ error: 'Authentification requise pour créer un utilisateur' });
       }
 
-      // Only SUPER_ADMIN can create users with entrepriseId
+      // Only SUPER_ADMIN can create SUPER_ADMIN users
+      if (role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Seul SUPER_ADMIN peut créer d\'autres SUPER_ADMIN' });
+      }
+
+      // Only SUPER_ADMIN can create users for other entreprises
       if (entrepriseId && currentUser.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Seul SUPER_ADMIN peut créer des utilisateurs pour une entreprise' });
       }
 
-      // If not SUPER_ADMIN, use the current user's entrepriseId
-      const finalEntrepriseId = entrepriseId || currentUser.entrepriseId;
+      // For SUPER_ADMIN, entrepriseId should be null
+      const finalEntrepriseId = role === 'SUPER_ADMIN' ? null : (entrepriseId || currentUser.entrepriseId);
 
       const result = await authService.register(email, password, role, finalEntrepriseId);
       res.json(result);

@@ -4,9 +4,10 @@ import { requireAuth,requireRole } from "../middleware/auth.js";
 
 const router: Router = express.Router();
 
-// Register (unprotected for initial SUPER_ADMIN creation)
+// Register (authentication required for user creation)
 router.post(
   "/register",
+  requireAuth,
   authController.register.bind(authController)
 );
 // Login

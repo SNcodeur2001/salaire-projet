@@ -19,4 +19,10 @@ router.put('/:id', requireRole('SUPER_ADMIN', 'ADMIN'), payslipController.update
 // Get payments for payslip
 router.get('/:id/payments', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payslipController.getPayslipPayments.bind(payslipController));
 
+// Download payslip PDF
+router.get('/:id/pdf', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payslipController.downloadPayslipPdf.bind(payslipController));
+
+// Send payslip by email
+router.post('/:id/email', requireRole('SUPER_ADMIN', 'ADMIN'), payslipController.sendPayslipEmail.bind(payslipController));
+
 export default router;

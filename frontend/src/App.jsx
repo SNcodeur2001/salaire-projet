@@ -63,6 +63,13 @@ const AppContent = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/super-admin/users" element={
+        <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
+            <SuperAdminUsers />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
 
 
       {/* Admin Routes */}

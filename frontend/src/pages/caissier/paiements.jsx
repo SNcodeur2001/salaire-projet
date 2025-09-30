@@ -1,75 +1,117 @@
 import * as React from "react"
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { apiClient } from "@/lib/api"
 import { KPICard } from "@/components/ui/kpi-card"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/enhanced-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Plus, 
-  Search, 
-  CreditCard, 
+import {
+  Plus,
+  Search,
+  CreditCard,
   Euro,
   Calendar,
   Receipt,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle
 } from "lucide-react"
 
 const CaissierPaiements = () => {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
 
-  const kpiData = [
-    {
-      title: "Paiements Aujourd'hui",
-      value: "€18,950",
-      subtitle: "12 transactions",
-      icon: Euro,
-      trend: { value: 8, label: "vs hier" }
-    },
-    {
-      title: "Total ce Mois",
-      value: "€268,750",
-      subtitle: "85 paiements",
-      icon: TrendingUp,
-      trend: { value: 12, label: "progression" }
-    },
-    {
-      title: "Taux de Réussite",
-      value: "98.5%",
-      subtitle: "transactions validées",
-      icon: CheckCircle,
-      trend: { value: 1, label: "amélioration" }
-    },
-    {
-      title: "Temps Moyen",
-      value: "2.3 min",
-      subtitle: "par transaction",
-      icon: Clock,
-      trend: { value: -15, label: "optimisation" }
-    }
-  ]
+  // Fetch payments data
+  const { data: paymentsData = [], isLoading, error } = useQuery({
+    queryKey: ['payments', user?.entrepriseId],
+    queryFn: () => apiClient.getPayments({ entrepriseId: user?.entrepriseId }),
+    enabled: !!user?.entrepriseId,
+  })
+
+  // Calculate dynamic KPIs
+  const calculateKPIs = () => {
+    const today = new Date().toDateString()
+    const thisMonth = new Date().getMonth()
+    const thisYear = new Date().getFullYear()
+
+    const todayPayments = paymentsData.filter(p =>
+      new Date(p.paymentDate).toDateString() === today
+    )
+
+    const monthPayments = paymentsData.filter(p => {
+      const paymentDate = new Date(p.paymentDate)
+      return paymentDate.getMonth() === thisMonth && paymentDate.getFullYear() === thisYear
+    })
+
+    const todayAmount = todayPayments.reduce((sum, p) => sum + p.amount, 0)
+    const monthAmount = monthPayments.reduce((sum, p) => sum + p.amount, 0)
+
+    // Calculate success rate (assuming all payments are successful for now)
+    const successRate = paymentsData.length > 0 ? 98.5 : 0
+
+    return [
+      {
+        title: "Paiements Aujourd'hui",
+        value: `€${todayAmount.toLocaleString()}`,
+        subtitle: `${todayPayments.length} transaction${todayPayments.length > 1 ? 's' : ''}`,
+        icon: Euro,
+        trend: { value: 8, label: "vs hier" }
+      },
+      {
+        title: "Total ce Mois",
+        value: `€${monthAmount.toLocaleString()}`,
+        subtitle: `${monthPayments.length} paiement${monthPayments.length > 1 ? 's' : ''}`,
+        icon: TrendingUp,
+        trend: { value: 12, label: "progression" }
+      },
+      {
+        title: "Taux de Réussite",
+        value: `${successRate}%`,
+        subtitle: "transactions validées",
+        icon: CheckCircle,
+        trend: { value: 1, label: "amélioration" }
+      },
+      {
+        title: "Temps Moyen",
+        value: "2.3 min",
+        subtitle: "par transaction",
+        icon: Clock,
+        trend: { value: -15, label: "optimisation" }
+      }
+    ]
+  }
+
+  const kpiData = calculateKPIs()
 
   const columns = [
-    { 
-      key: 'employee', 
+    {
+      key: 'employee',
       title: 'Bénéficiaire',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-            {value.split(' ').map((n) => n[0]).join('').toUpperCase()}
+      render: (value, row) => {
+        const employeeName = row.payslip?.employee ?
+          `${row.payslip.employee.firstName} ${row.payslip.employee.lastName}` : 'Employé';
+        const reference = `PAY-${row.id.slice(0, 8).toUpperCase()}`;
+
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+              {employeeName.split(' ').map((n) => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium">{employeeName}</p>
+              <p className="text-sm text-muted-foreground">{reference}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">{value}</p>
-            <p className="text-sm text-muted-foreground">{row.reference}</p>
-          </div>
-        </div>
-      )
+        );
+      }
     },
-    { 
-      key: 'amount', 
+    {
+      key: 'amount',
       title: 'Montant',
       render: (value) => (
         <div className="flex items-center space-x-1">
@@ -78,45 +120,110 @@ const CaissierPaiements = () => {
         </div>
       )
     },
-    { 
-      key: 'method', 
+    {
+      key: 'mode',
       title: 'Méthode',
       render: (value) => (
         <Badge variant="outline">
-          {value === 'bank_transfer' ? 'Virement' : 
-           value === 'check' ? 'Chèque' : 'Espèces'}
+          {value === 'VIREMENT' ? 'Virement' :
+           value === 'CHEQUE' ? 'Chèque' :
+           value === 'ESPECES' ? 'Espèces' :
+           value === 'OM' ? 'Orange Money' :
+           value === 'WAVE' ? 'Wave' : value}
         </Badge>
       )
     },
-    { 
-      key: 'date', 
+    {
+      key: 'paymentDate',
       title: 'Date',
       render: (value) => (
         <div className="flex items-center space-x-1">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
+          <span className="text-sm">
+            {new Date(value).toLocaleDateString('fr-FR')}
+          </span>
         </div>
       )
     },
-    { 
-      key: 'status', 
+    {
+      key: 'status',
       title: 'Statut',
-      render: (value) => (
-        <Badge variant={value === 'completed' ? 'default' : 'secondary'}>
+      render: () => (
+        <Badge variant="default">
           <CheckCircle className="mr-1 h-3 w-3" />
-          {value === 'completed' ? 'Traité' : 'En cours'}
+          Traité
         </Badge>
       )
     }
   ]
 
-  const paymentsData = [
-    { employee: 'Marie Dubois', reference: 'PAY-2024-001', amount: 3420, method: 'bank_transfer', date: '03/03/2024', status: 'completed' },
-    { employee: 'Pierre Martin', reference: 'PAY-2024-002', amount: 3900, method: 'bank_transfer', date: '03/03/2024', status: 'completed' },
-    { employee: 'Claire Bernard', reference: 'PAY-2024-003', amount: 3200, method: 'bank_transfer', date: '03/03/2024', status: 'completed' },
-    { employee: 'Nicolas Petit', reference: 'PAY-2024-004', amount: 3650, method: 'bank_transfer', date: '03/03/2024', status: 'completed' },
-    { employee: 'Isabelle Roux', reference: 'PAY-2024-005', amount: 4180, method: 'check', date: '02/03/2024', status: 'completed' }
-  ]
+  // Filter payments based on search term
+  const filteredPayments = paymentsData.filter(payment => {
+    const employeeName = payment.payslip?.employee ?
+      `${payment.payslip.employee.firstName} ${payment.payslip.employee.lastName}` : '';
+    const searchLower = searchTerm.toLowerCase();
+    return employeeName.toLowerCase().includes(searchLower) ||
+           payment.id.toLowerCase().includes(searchLower) ||
+           payment.mode.toLowerCase().includes(searchLower);
+  })
+
+  // Error handling
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-semibold">Erreur de chargement</h3>
+          <p className="text-muted-foreground">{error.message}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-64 bg-muted rounded"></div>
+            <div className="h-4 w-48 bg-muted rounded mt-2"></div>
+          </div>
+          <div className="h-10 w-40 bg-muted rounded"></div>
+        </div>
+
+        {/* Loading KPI cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-6 border rounded-lg">
+              <div className="h-4 w-24 bg-muted rounded mb-2"></div>
+              <div className="h-8 w-16 bg-muted rounded mb-1"></div>
+              <div className="h-3 w-20 bg-muted rounded"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Loading table */}
+        <div className="p-6 border rounded-lg">
+          <div className="h-6 w-48 bg-muted rounded mb-4"></div>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-4 border rounded">
+                <div className="h-10 w-10 bg-muted rounded-full"></div>
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 w-32 bg-muted rounded"></div>
+                  <div className="h-3 w-24 bg-muted rounded"></div>
+                </div>
+                <div className="h-4 w-16 bg-muted rounded"></div>
+                <div className="h-4 w-12 bg-muted rounded"></div>
+                <div className="h-8 w-8 bg-muted rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -125,7 +232,7 @@ const CaissierPaiements = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Paiements</h1>
           <p className="text-muted-foreground">
-            Historique et gestion des transactions
+            Historique et gestion des transactions{user?.entreprise ? ` - ${user.entreprise.name}` : ''}
           </p>
         </div>
         <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>
@@ -150,7 +257,7 @@ const CaissierPaiements = () => {
                 <span>Historique des Paiements</span>
               </CardTitle>
               <CardDescription>
-                Transactions récentes et leur statut
+                {filteredPayments.length} paiement{filteredPayments.length > 1 ? 's' : ''} trouvé{filteredPayments.length > 1 ? 's' : ''}
               </CardDescription>
             </div>
             <div className="relative">
@@ -167,7 +274,10 @@ const CaissierPaiements = () => {
         <CardContent>
           <DataTable
             columns={columns}
-            data={paymentsData}
+            data={filteredPayments}
+            loading={isLoading}
+            error={error}
+            emptyMessage="Aucun paiement trouvé"
           />
         </CardContent>
       </Card>

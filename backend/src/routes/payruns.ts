@@ -22,4 +22,7 @@ router.put('/:id', requireRole('SUPER_ADMIN', 'ADMIN'), payrunController.updateP
 // Get payslips for payrun
 router.get('/:id/payslips', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payrunController.getPayrunPayslips.bind(payrunController));
 
+// Generate payslips for payrun
+router.post('/:id/generate', requireRole('SUPER_ADMIN', 'ADMIN'), payrunController.generatePayslips.bind(payrunController));
+
 export default router;

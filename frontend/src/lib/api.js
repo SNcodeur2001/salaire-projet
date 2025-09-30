@@ -233,6 +233,66 @@ class ApiClient {
   async getPaymentReceipt(id) {
     return this.request(`/payments/${id}/receipt`);
   }
+
+  // Payslips additional endpoints
+  async getPayslipPayments(payslipId) {
+    return this.request(`/payslips/${payslipId}/payments`);
+  }
+
+  async generatePayslips(payrunId) {
+    return this.request(`/payruns/${payrunId}/generate`, {
+      method: 'POST',
+    });
+  }
+
+  async downloadPayslipPdf(payslipId) {
+    // This will trigger a download
+    const response = await fetch(`${this.baseURL}/payslips/${payslipId}/pdf`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Erreur lors du téléchargement du PDF');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulletin-${payslipId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  async sendPayslipEmail(payslipId) {
+    return this.request(`/payslips/${payslipId}/email`, {
+      method: 'POST',
+    });
+  }
+
+  // Users endpoints
+  async getUsers() {
+    return this.request('/users');
+  }
+
+  async getUser(id) {
+    return this.request(`/users/${id}`);
+  }
+
+  async updateUser(id, userData) {
+    return this.request(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
