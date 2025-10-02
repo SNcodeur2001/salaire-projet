@@ -9,6 +9,8 @@ export class PayslipRepository {
     grossSalary: number;
     deductions: number;
     netSalary: number;
+    daysWorked?: number | null;
+    hoursWorked?: number | null;
   }): Promise<Payslip> {
     return await prisma.payslip.create({ data });
   }

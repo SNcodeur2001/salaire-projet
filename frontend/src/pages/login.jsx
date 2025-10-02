@@ -84,7 +84,7 @@ const Login = () => {
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold gradient-text">PayrollPro</h1>
+            <h1 className="text-3xl font-bold gradient-text">GES-Salary</h1>
             <p className="text-muted-foreground">
               Plateforme de gestion des salaires
             </p>
@@ -167,7 +167,7 @@ const Login = () => {
         </Card>
 
         <div className="text-center text-sm text-muted-foreground">
-          <p>© 2024 PayrollPro. Tous droits réservés.</p>
+          <p>© 2024 GES-Salary. Tous droits réservés.</p>
         </div>
       </div>
     </div>

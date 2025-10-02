@@ -31,12 +31,33 @@ export class PayrunService {
     // Auto-create payslips for active employees
     const activeEmployees = await employeeRepository.findAllActive(data.entrepriseId);
     for (const employee of activeEmployees) {
+      let grossSalary = employee.baseSalary;
+      let daysWorked: number | undefined;
+      let hoursWorked: number | undefined;
+
+      if (employee.contract === 'JOURNALIER') {
+        // Calculate number of days in the month
+        const [year, month] = data.period.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        daysWorked = daysInMonth;
+        grossSalary = employee.baseSalary * daysInMonth;
+      } else if (employee.contract === 'HONORAIRE') {
+        // Default to 0 hours, can be updated later
+        hoursWorked = 0;
+        grossSalary = 0;
+      } else if (employee.contract === 'FIXE') {
+        // Use baseSalary as is
+        grossSalary = employee.baseSalary;
+      }
+
       await payslipRepository.create({
         employeeId: employee.id,
         cycleId: payrun.id,
-        grossSalary: employee.baseSalary,
+        grossSalary,
         deductions: 0, // Default to 0, can be updated later
-        netSalary: employee.baseSalary,
+        netSalary: grossSalary,
+        daysWorked,
+        hoursWorked,
       });
     }
 

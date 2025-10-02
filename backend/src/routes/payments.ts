@@ -7,6 +7,9 @@ const router: Router = express.Router();
 // All routes require authentication
 router.use(requireAuth);
 
+// Get payments
+router.get('/', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), paymentController.getPayments.bind(paymentController));
+
 // Create payment
 router.post('/', requireRole('SUPER_ADMIN', 'CAISSIER'), paymentController.createPayment.bind(paymentController));
 

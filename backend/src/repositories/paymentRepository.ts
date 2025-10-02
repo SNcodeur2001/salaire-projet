@@ -34,6 +34,31 @@ export class PaymentRepository {
     });
     return result._sum.amount || 0;
   }
+
+  async findAll(filters: { entrepriseId?: string } = {}): Promise<Payment[]> {
+    const where: any = {};
+
+    if (filters.entrepriseId) {
+      where.payslip = {
+        employee: {
+          entrepriseId: filters.entrepriseId,
+        },
+      };
+    }
+
+    return await prisma.payment.findMany({
+      where,
+      include: {
+        payslip: {
+          include: {
+            employee: true,
+          },
+        },
+        caissier: true,
+      },
+      orderBy: { paymentDate: 'desc' },
+    });
+  }
 }
 
 export default new PaymentRepository();

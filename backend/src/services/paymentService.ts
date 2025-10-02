@@ -47,6 +47,10 @@ export class PaymentService {
     // Simulate PDF URL
     return { receiptUrl: `https://example.com/receipts/${id}.pdf` };
   }
+
+  async getPayments(filters: { entrepriseId?: string } = {}) {
+    return await paymentRepository.findAll(filters);
+  }
 }
 
 export default new PaymentService();

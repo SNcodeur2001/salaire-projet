@@ -71,7 +71,7 @@ const SuperAdminDashboard = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Vue d'ensemble</h1>
           <p className="text-muted-foreground">
-            Gestion globale de la plateforme PayrollPro
+            Gestion globale de la plateforme GES-Salary
           </p>
         </div>
         <Button variant="gradient" icon={<Plus className="h-4 w-4" />}>

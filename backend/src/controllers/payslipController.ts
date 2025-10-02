@@ -91,15 +91,7 @@ export class PayslipController {
         return res.status(400).json({ error: 'Entreprise non trouvée' });
       }
 
-      // Get payslip with relations
-      const payslip = await payslipService.getPayslipById(id, entrepriseId);
-
-      // Set headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="bulletin-${id}.pdf"`);
-
-      // For now, return a simple text response (in real app, generate actual PDF)
-      res.send(`PDF Content for payslip ${id}`);
+      await payslipService.generatePayslipPdf(id, entrepriseId, res);
     } catch (error: any) {
       res.status(404).json({ error: error.message });
     }

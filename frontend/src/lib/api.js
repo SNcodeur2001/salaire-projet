@@ -219,6 +219,11 @@ class ApiClient {
   }
 
   // Payments endpoints
+  async getPayments(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/payments?${query}`);
+  }
+
   async createPayment(payment) {
     return this.request('/payments', {
       method: 'POST',

@@ -82,7 +82,7 @@ const Sidebar = React.forwardRef(({
             )}
             <div className="flex flex-col">
               <span className="text-sm font-semibold gradient-text">
-                {entreprise?.name || 'PayrollPro'}
+                {entreprise?.name || 'GES-Salary'}
               </span>
               <span className="text-xs text-muted-foreground">{getRoleDisplayName(userRole)}</span>
             </div>

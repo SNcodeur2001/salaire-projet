@@ -35,6 +35,20 @@ export class PaymentController {
       res.status(404).json({ error: error.message });
     }
   }
+
+  async getPayments(req: Request, res: Response) {
+    try {
+      const { entrepriseId } = req.query;
+      const filters: { entrepriseId?: string } = {};
+      if (entrepriseId && typeof entrepriseId === 'string') {
+        filters.entrepriseId = entrepriseId;
+      }
+      const payments = await paymentService.getPayments(filters);
+      res.json(payments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 export default new PaymentController();
