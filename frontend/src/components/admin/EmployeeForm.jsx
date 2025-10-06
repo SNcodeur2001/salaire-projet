@@ -28,6 +28,8 @@ import { DialogClose } from "@/components/ui/dialog"
 
 // Validation schema
 const employeeSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
   poste: z.string().min(1, "Le poste est requis"),
@@ -50,6 +52,7 @@ const predefinedPosts = [
   "Support",
   "RH",
 ]
+
 
 export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, onCancel }) {
   const { user } = useAuth()
@@ -120,6 +123,35 @@ export function EmployeeForm({ defaultValues = {}, onSuccess, isEdit = false, on
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="john.doe@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mot de passe</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="********" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}

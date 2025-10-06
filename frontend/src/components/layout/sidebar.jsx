@@ -9,6 +9,7 @@ import {
   Calculator,
   FileText,
   CreditCard,
+  Clock,
   ChevronLeft,
   LogOut
 } from "lucide-react"
@@ -25,11 +26,16 @@ const roleMenuItems = {
     { path: '/admin/employes', label: 'Employés', icon: UserCheck },
     { path: '/admin/payruns', label: 'Cycles de Paie', icon: Calculator },
     { path: '/admin/payslips', label: 'Bulletins', icon: FileText },
+    { path: '/admin/attendance', label: 'Pointage', icon: Clock },
   ],
   'caissier': [
     { path: '/caissier', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/caissier/payslips', label: 'Bulletins', icon: FileText },
     { path: '/caissier/paiements', label: 'Paiements', icon: CreditCard },
+    { path: '/caissier/attendance', label: 'Pointage', icon: Clock },
+  ],
+  'vigile': [
+    { path: '/vigile', label: 'Pointage Employés', icon: Clock },
   ]
 }
 
@@ -49,6 +55,7 @@ const Sidebar = React.forwardRef(({
       case 'super-admin': return 'Super Admin'
       case 'admin': return 'Administrateur'
       case 'caissier': return 'Caissier'
+      case 'vigile': return 'Vigile'
       default: return role
     }
   }

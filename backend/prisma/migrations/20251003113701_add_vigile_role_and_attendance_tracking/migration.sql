@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE `Attendance` ADD COLUMN `markedById` VARCHAR(191) NULL;
+
+-- AlterTable
+ALTER TABLE `User` MODIFY `role` ENUM('SUPER_ADMIN', 'ADMIN', 'CAISSIER', 'VIGILE', 'EMPLOYE') NOT NULL DEFAULT 'EMPLOYE';
+
+-- AddForeignKey
+ALTER TABLE `Attendance` ADD CONSTRAINT `Attendance_markedById_fkey` FOREIGN KEY (`markedById`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

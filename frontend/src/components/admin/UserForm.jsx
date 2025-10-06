@@ -39,6 +39,11 @@ export function UserForm({ defaultValues, isEdit = false, onSuccess, onCancel })
       password: "",
       role: defaultValues?.role || "CAISSIER",
       entrepriseId: defaultValues?.entrepriseId || "",
+      firstName: defaultValues?.firstName || "",
+      lastName: defaultValues?.lastName || "",
+      poste: defaultValues?.poste || "",
+      contract: defaultValues?.contract || "FIXE",
+      baseSalary: defaultValues?.baseSalary || 0,
       ...defaultValues,
     },
   })
@@ -51,6 +56,16 @@ export function UserForm({ defaultValues, isEdit = false, onSuccess, onCancel })
         password: data.password,
         role: data.role,
         entrepriseId: data.role === 'SUPER_ADMIN' ? null : data.entrepriseId || undefined,
+      }
+
+      if (data.role === 'EMPLOYE' || data.role === 'CAISSIER') {
+        userData.employeeData = {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          poste: data.poste,
+          contract: data.contract,
+          baseSalary: data.baseSalary,
+        }
       }
 
       await apiClient.register(userData)
@@ -158,6 +173,7 @@ export function UserForm({ defaultValues, isEdit = false, onSuccess, onCancel })
                       <SelectItem value="SUPER_ADMIN">Super Administrateur</SelectItem>
                       <SelectItem value="ADMIN">Administrateur</SelectItem>
                       <SelectItem value="CAISSIER">Caissier</SelectItem>
+                      <SelectItem value="VIGILE">Vigile</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -194,6 +210,94 @@ export function UserForm({ defaultValues, isEdit = false, onSuccess, onCancel })
                   </FormItem>
                 )}
               />
+            )}
+
+            {(form.watch("role") === "EMPLOYE" || form.watch("role") === "CAISSIER") && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  rules={{ required: "Le prénom est requis" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prénom</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Prénom" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  rules={{ required: "Le nom est requis" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nom" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="poste"
+                  rules={{ required: "Le poste est requis" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Poste</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Poste" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contract"
+                  rules={{ required: "Le contrat est requis" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type de contrat</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un contrat" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="JOURNALIER">Journalier</SelectItem>
+                          <SelectItem value="FIXE">Fixe</SelectItem>
+                          <SelectItem value="HONORAIRE">Honoraire</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="baseSalary"
+                  rules={{ required: "Le salaire de base est requis", min: { value: 0, message: "Salaire positif requis" } }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Salaire de base</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Salaire de base" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
 
             <div className="flex space-x-2 pt-4">

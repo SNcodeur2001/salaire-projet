@@ -26,7 +26,15 @@ export class EmployeeService {
         return await employeeRepository.activate(id, entrepriseId, isActive);
     }
     async filterEmployees(entrepriseId, filters) {
-        return await employeeRepository.filter(entrepriseId, filters);
+        const { status, ...rest } = filters;
+        const mappedFilters = { ...rest };
+        if (status === 'active') {
+            mappedFilters.isActive = true;
+        }
+        else if (status === 'inactive') {
+            mappedFilters.isActive = false;
+        }
+        return await employeeRepository.filter(entrepriseId, mappedFilters);
     }
 }
 export default new EmployeeService();

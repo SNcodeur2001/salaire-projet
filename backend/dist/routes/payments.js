@@ -4,8 +4,10 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 const router = express.Router();
 // All routes require authentication
 router.use(requireAuth);
+// Get payments
+router.get('/', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), paymentController.getPayments.bind(paymentController));
 // Create payment
-router.post('/', requireRole('CAISSIER'), paymentController.createPayment.bind(paymentController));
+router.post('/', requireRole('SUPER_ADMIN', 'CAISSIER'), paymentController.createPayment.bind(paymentController));
 // Get payment by id
 router.get('/:id', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), paymentController.getPayment.bind(paymentController));
 // Get payment receipt

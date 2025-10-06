@@ -2,18 +2,26 @@ import authService from '../services/authService.js';
 export class AuthController {
     async register(req, res) {
         try {
-            const { email, password, role, entrepriseId } = req.body;
+            const { email, password, role, entrepriseId, employeeData } = req.body;
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email et password requis' });
             }
-            // Only SUPER_ADMIN can create users with entrepriseId
             const currentUser = req.user;
-            if (entrepriseId && (!currentUser || currentUser.role !== 'SUPER_ADMIN')) {
+            // Authentication is now required for all user creation
+            if (!currentUser) {
+                return res.status(401).json({ error: 'Authentification requise pour créer un utilisateur' });
+            }
+            // Only SUPER_ADMIN can create SUPER_ADMIN users
+            if (role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Seul SUPER_ADMIN peut créer d\'autres SUPER_ADMIN' });
+            }
+            // Only SUPER_ADMIN can create users for other entreprises
+            if (entrepriseId && currentUser.role !== 'SUPER_ADMIN') {
                 return res.status(403).json({ error: 'Seul SUPER_ADMIN peut créer des utilisateurs pour une entreprise' });
             }
-            // If not SUPER_ADMIN, use the current user's entrepriseId
-            const finalEntrepriseId = entrepriseId || currentUser?.entrepriseId;
-            const result = await authService.register(email, password, role, finalEntrepriseId);
+            // For SUPER_ADMIN, entrepriseId should be null
+            const finalEntrepriseId = role === 'SUPER_ADMIN' ? null : (entrepriseId || currentUser.entrepriseId);
+            const result = await authService.register(email, password, role, finalEntrepriseId, employeeData);
             res.json(result);
         }
         catch (error) {
@@ -23,8 +31,18 @@ export class AuthController {
     async login(req, res) {
         try {
             const { email, password } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ error: 'Email et password requis' });
+            // Validation détaillée
+            if (!email) {
+                return res.status(400).json({ error: 'L\'adresse email est requise' });
+            }
+            if (!password) {
+                return res.status(400).json({ error: 'Le mot de passe est requis' });
+            }
+            if (typeof email !== 'string' || !email.includes('@')) {
+                return res.status(400).json({ error: 'Format d\'email invalide' });
+            }
+            if (typeof password !== 'string' || password.length < 6) {
+                return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
             }
             const result = await authService.login(email, password);
             res.json(result);

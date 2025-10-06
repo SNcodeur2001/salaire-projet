@@ -1,6 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 export class PayslipRepository {
+    async create(data) {
+        return await prisma.payslip.create({ data });
+    }
+    async findAllByEntreprise(entrepriseId) {
+        return await prisma.payslip.findMany({
+            where: { employee: { entrepriseId } },
+            include: { employee: true, cycle: true, payments: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     async findById(id, entrepriseId) {
         return await prisma.payslip.findFirst({
             where: { id, employee: { entrepriseId } },

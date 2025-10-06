@@ -11,6 +11,7 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   CAISSIER
+  VIGILE
   EMPLOYE
 }
 
@@ -46,6 +47,7 @@ model User {
   entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
   employee     Employee?   // si l'utilisateur est aussi un employé
   payments     Payment[]   @relation("CaissierPayments")
+  markedAttendances Attendance[] // attendances marquées par cet utilisateur
 }
 
 model Entreprise {
@@ -82,6 +84,7 @@ model Employee {
   userId       String?     @unique
   user         User?       @relation(fields: [userId], references: [id])
   payslips     Payslip[]
+  attendances  Attendance[]
 }
 
 model PayrollCycle {
@@ -128,4 +131,18 @@ model Payment {
   payslip    Payslip @relation(fields: [payslipId], references: [id])
   caissierId String
   caissier   User @relation("CaissierPayments", fields: [caissierId], references: [id])
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  date        DateTime
+  clockIn     DateTime?
+  clockOut    DateTime?
+  status      String   @default("PRESENT") // PRESENT, ABSENT, LATE, etc.
+  markedById  String?  // ID de l'utilisateur qui a marqué le pointage (vigile/admin)
+  markedBy    User?    @relation(fields: [markedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

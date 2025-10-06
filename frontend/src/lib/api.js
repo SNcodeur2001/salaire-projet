@@ -298,6 +298,48 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Attendances endpoints
+  async clockIn() {
+    return this.request('/attendances/clock-in', {
+      method: 'POST',
+    });
+  }
+
+  async clockOut() {
+    return this.request('/attendances/clock-out', {
+      method: 'POST',
+    });
+  }
+
+  async getMyAttendance() {
+    return this.request('/attendances/my-attendance');
+  }
+
+  async getAttendanceByDate(date) {
+    return this.request(`/attendances/by-date?date=${date}`);
+  }
+
+  async markClockIn(employeeId, date) {
+    return this.request('/attendances/mark-clock-in', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId, date }),
+    });
+  }
+
+  async markClockOut(employeeId, date) {
+    return this.request('/attendances/mark-clock-out', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId, date }),
+    });
+  }
+
+  async markAbsent(employeeId, date) {
+    return this.request('/attendances/mark-absent', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId, date }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

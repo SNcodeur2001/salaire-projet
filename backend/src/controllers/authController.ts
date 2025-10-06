@@ -4,7 +4,7 @@ import authService from '../services/authService.js';
 export class AuthController {
   async register(req: Request, res: Response) {
     try {
-      const { email, password, role, entrepriseId } = req.body;
+      const { email, password, role, entrepriseId, employeeData } = req.body;
       if (!email || !password) {
         return res.status(400).json({ error: 'Email et password requis' });
       }
@@ -29,7 +29,7 @@ export class AuthController {
       // For SUPER_ADMIN, entrepriseId should be null
       const finalEntrepriseId = role === 'SUPER_ADMIN' ? null : (entrepriseId || currentUser.entrepriseId);
 
-      const result = await authService.register(email, password, role, finalEntrepriseId);
+      const result = await authService.register(email, password, role, finalEntrepriseId, employeeData);
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

@@ -5,7 +5,7 @@ const router = express.Router();
 // All routes require authentication
 router.use(requireAuth);
 // Get all employees
-router.get('/', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), employeeController.getEmployees.bind(employeeController));
+router.get('/', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER', 'VIGILE'), employeeController.getEmployees.bind(employeeController));
 // Get employee by id
 router.get('/:id', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), employeeController.getEmployee.bind(employeeController));
 // Create employee

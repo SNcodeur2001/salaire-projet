@@ -2,7 +2,10 @@ import payrunService from '../services/payrunService.js';
 export class PayrunController {
     async getPayruns(req, res) {
         try {
-            const entrepriseId = req.user?.entrepriseId;
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.query.entrepriseId;
+            }
             if (!entrepriseId) {
                 return res.status(400).json({ error: 'Entreprise non trouvée' });
             }
@@ -16,7 +19,10 @@ export class PayrunController {
     async getPayrun(req, res) {
         try {
             const { id } = req.params;
-            const entrepriseId = req.user?.entrepriseId;
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.query.entrepriseId || req.body.entrepriseId;
+            }
             if (!entrepriseId) {
                 return res.status(400).json({ error: 'Entreprise non trouvée' });
             }
@@ -29,7 +35,18 @@ export class PayrunController {
     }
     async createPayrun(req, res) {
         try {
-            const entrepriseId = req.user?.entrepriseId;
+            const { period, status } = req.body;
+            // Validation détaillée
+            if (!period || typeof period !== 'string' || period.trim().length === 0) {
+                return res.status(400).json({ error: 'La période est requise et doit être une chaîne non vide' });
+            }
+            if (!status || !['BROUILLON', 'APPROUVE', 'CLOS'].includes(status)) {
+                return res.status(400).json({ error: 'Le statut doit être BROUILLON, APPROUVE ou CLOS' });
+            }
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.body.entrepriseId;
+            }
             if (!entrepriseId) {
                 return res.status(400).json({ error: 'Entreprise non trouvée' });
             }
@@ -44,7 +61,10 @@ export class PayrunController {
         try {
             const { id } = req.params;
             const { status } = req.body;
-            const entrepriseId = req.user?.entrepriseId;
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.body.entrepriseId;
+            }
             if (!entrepriseId) {
                 return res.status(400).json({ error: 'Entreprise non trouvée' });
             }
@@ -58,7 +78,10 @@ export class PayrunController {
     async getPayrunPayslips(req, res) {
         try {
             const { id } = req.params;
-            const entrepriseId = req.user?.entrepriseId;
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.query.entrepriseId || req.body.entrepriseId;
+            }
             if (!entrepriseId) {
                 return res.status(400).json({ error: 'Entreprise non trouvée' });
             }
@@ -67,6 +90,23 @@ export class PayrunController {
         }
         catch (error) {
             res.status(404).json({ error: error.message });
+        }
+    }
+    async generatePayslips(req, res) {
+        try {
+            const { id } = req.params;
+            let entrepriseId = req.user?.entrepriseId;
+            if (req.user?.role === 'SUPER_ADMIN') {
+                entrepriseId = req.body.entrepriseId;
+            }
+            if (!entrepriseId) {
+                return res.status(400).json({ error: 'Entreprise non trouvée' });
+            }
+            const payslips = await payrunService.generatePayslips(id, entrepriseId);
+            res.json(payslips);
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message });
         }
     }
 }

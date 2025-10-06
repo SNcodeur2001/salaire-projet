@@ -6,7 +6,7 @@ interface PdfOptions {
   entreprise: Entreprise;
 }
 
-export function generatePayslipPdf(doc: PDFDocument, options: PdfOptions) {
+export function generatePayslipPdf(doc: typeof PDFDocument.prototype, options: PdfOptions) {
   const { payslip, entreprise } = options;
 
   // Document metadata

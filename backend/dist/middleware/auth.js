@@ -6,7 +6,7 @@ export function requireAuth(req, res, next) {
     const token = auth.split(" ")[1];
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = { userId: payload.userId, role: payload.role };
+        req.user = { userId: payload.userId, role: payload.role, entrepriseId: payload.entrepriseId };
         return next();
     }
     catch (e) {

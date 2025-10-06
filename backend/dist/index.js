@@ -8,6 +8,8 @@ import entrepriseRoutes from "./routes/entreprises.js";
 import payrunRoutes from "./routes/payruns.js";
 import payslipRoutes from "./routes/payslips.js";
 import paymentRoutes from "./routes/payments.js";
+import userRoutes from "./routes/users.js";
+import attendanceRoutes from "./routes/attendances.js";
 dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
@@ -25,6 +27,8 @@ app.use("/api/entreprises", entrepriseRoutes);
 app.use("/api/payruns", payrunRoutes);
 app.use("/api/payslips", payslipRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/attendances", attendanceRoutes);
 // health
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 const PORT = process.env.PORT || 4000;

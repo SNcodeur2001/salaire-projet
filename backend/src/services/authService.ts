@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Role } from '@prisma/client';
+import { Role, ContractType } from '@prisma/client';
 import userRepository from '../repositories/userRepository.js';
 import entrepriseRepository from '../repositories/entrepriseRepository.js';
+import employeeRepository from '../repositories/employeeRepository.js';
 
 interface UserResponse {
   id: string;
@@ -23,7 +24,13 @@ interface AuthResult {
 }
 
 export class AuthService {
-  async register(email: string, password: string, role: Role = Role.ADMIN, entrepriseId?: string | null): Promise<AuthResult> {
+  async register(email: string, password: string, role: Role = Role.ADMIN, entrepriseId?: string | null, employeeData?: {
+    firstName: string;
+    lastName: string;
+    poste: string;
+    contract: ContractType;
+    baseSalary: number;
+  }): Promise<AuthResult> {
     // Check if user exists
     const existing = await userRepository.findByEmail(email);
     if (existing) {
@@ -40,6 +47,19 @@ export class AuthService {
       role,
       entrepriseId,
     });
+
+    // Create employee if role is EMPLOYE or CAISSIER
+    if ((role === Role.EMPLOYE || role === Role.CAISSIER) && employeeData && entrepriseId) {
+      await employeeRepository.create({
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        poste: employeeData.poste,
+        contract: employeeData.contract,
+        baseSalary: employeeData.baseSalary,
+        entrepriseId,
+        userId: user.id,
+      });
+    }
 
     // Generate token
     const token = jwt.sign(

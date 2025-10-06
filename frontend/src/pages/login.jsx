@@ -54,6 +54,8 @@ const Login = () => {
         navigate('/admin')
       } else if (user.role === 'CAISSIER') {
         navigate('/caissier')
+      } else if (user.role === 'VIGILE') {
+        navigate('/vigile')
       } else {
         toast({
           title: "Erreur",

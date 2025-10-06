@@ -9,6 +9,7 @@ import payrunRoutes from "./routes/payruns.js";
 import payslipRoutes from "./routes/payslips.js";
 import paymentRoutes from "./routes/payments.js";
 import userRoutes from "./routes/users.js";
+import attendanceRoutes from "./routes/attendances.js";
 
 dotenv.config();
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/payruns", payrunRoutes);
 app.use("/api/payslips", payslipRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/attendances", attendanceRoutes);
 
 // health
 app.get("/api/health", (req: Request, res: Response) => res.json({ ok: true }));

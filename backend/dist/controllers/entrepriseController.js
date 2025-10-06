@@ -31,10 +31,12 @@ export class EntrepriseController {
     async updateEntreprise(req, res) {
         try {
             const { id } = req.params;
+            console.log('Updating entreprise:', id, req.body);
             const entreprise = await entrepriseService.updateEntreprise(id, req.body);
             res.json(entreprise);
         }
         catch (error) {
+            console.error('Error updating entreprise:', error);
             res.status(400).json({ error: error.message });
         }
     }

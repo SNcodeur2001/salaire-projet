@@ -37,7 +37,7 @@ export class EmployeeController {
 
   async createEmployee(req: Request, res: Response) {
     try {
-      const { firstName, lastName, poste, contract, baseSalary } = req.body;
+      const { firstName, lastName, poste, contract, baseSalary, email, password } = req.body;
 
       // Validation détaillée
       if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
@@ -64,8 +64,23 @@ export class EmployeeController {
         return res.status(400).json({ error: 'Entreprise non trouvée' });
       }
 
-      const employee = await employeeService.createEmployee({ ...req.body, entrepriseId });
-      res.status(201).json(employee);
+      // If email and password are provided, create user with employee
+      if (email && password) {
+        const authService = (await import('../services/authService.js')).default;
+        const result = await authService.register(email, password, 'EMPLOYE', entrepriseId, {
+          firstName,
+          lastName,
+          poste,
+          contract,
+          baseSalary,
+        });
+        // Return the created user and employee info
+        res.status(201).json(result);
+      } else {
+        // Fallback to old method if no credentials
+        const employee = await employeeService.createEmployee({ firstName, lastName, poste, contract, baseSalary, entrepriseId });
+        res.status(201).json(employee);
+      }
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

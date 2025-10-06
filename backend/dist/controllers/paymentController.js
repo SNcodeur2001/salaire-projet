@@ -6,7 +6,8 @@ export class PaymentController {
             if (!caissierId) {
                 return res.status(400).json({ error: 'Caissier non trouvé' });
             }
-            const payment = await paymentService.createPayment({ ...req.body, caissierId });
+            const { entrepriseId, ...paymentData } = req.body;
+            const payment = await paymentService.createPayment({ ...paymentData, caissierId });
             res.status(201).json(payment);
         }
         catch (error) {
@@ -31,6 +32,20 @@ export class PaymentController {
         }
         catch (error) {
             res.status(404).json({ error: error.message });
+        }
+    }
+    async getPayments(req, res) {
+        try {
+            const { entrepriseId } = req.query;
+            const filters = {};
+            if (entrepriseId && typeof entrepriseId === 'string') {
+                filters.entrepriseId = entrepriseId;
+            }
+            const payments = await paymentService.getPayments(filters);
+            res.json(payments);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
         }
     }
 }

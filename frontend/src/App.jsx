@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,12 +18,17 @@ import AdminDashboard from "./pages/admin/dashboard.jsx";
 import AdminEmployees from "./pages/admin/employes.jsx";
 import AdminPayruns from "./pages/admin/payruns.jsx";
 import AdminPayslips from "./pages/admin/payslips.jsx";
+import AdminAttendance from "./pages/admin/attendance.jsx";
 import CaissierDashboard from "./pages/caissier/dashboard.jsx";
 import CaissierPayslips from "./pages/caissier/payslips.jsx";
 import CaissierPaiements from "./pages/caissier/paiements.jsx";
+import AttendancePage from "./pages/caissier/attendance.jsx";
+import VigileAttendance from "./pages/vigile/attendance.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 const queryClient = new QueryClient();
+
+
 
 const AppContent = () => {
   const { logout, user, entreprise } = useAuth();
@@ -101,6 +106,13 @@ const AppContent = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/admin/attendance" element={
+        <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
+            <AdminAttendance />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
 
       {/* Caissier Routes */}
       <Route path="/caissier" element={
@@ -121,6 +133,22 @@ const AppContent = () => {
         <ProtectedRoute allowedRoles={['CAISSIER']}>
           <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
             <CaissierPaiements />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/caissier/attendance" element={
+        <ProtectedRoute allowedRoles={['CAISSIER', 'EMPLOYE', 'EMPLOYEE']}>
+          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
+            <AttendancePage />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
+
+      {/* Vigile Routes */}
+      <Route path="/vigile" element={
+        <ProtectedRoute allowedRoles={['VIGILE']}>
+          <DashboardLayout userRole="vigile" userName="Vigile" entreprise={entreprise} onLogout={handleLogout}>
+            <VigileAttendance />
           </DashboardLayout>
         </ProtectedRoute>
       } />

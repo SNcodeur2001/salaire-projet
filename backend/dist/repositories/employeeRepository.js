@@ -37,6 +37,11 @@ export class EmployeeRepository {
             include: { user: true, entreprise: true },
         });
     }
+    async findAllActive(entrepriseId) {
+        return await prisma.employee.findMany({
+            where: { entrepriseId, isActive: true },
+        });
+    }
 }
 export default new EmployeeRepository();
 //# sourceMappingURL=employeeRepository.js.map
