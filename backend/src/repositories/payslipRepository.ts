@@ -45,6 +45,14 @@ export class PayslipRepository {
       include: { caissier: true },
     });
   }
+
+  async findByUserId(userId: string): Promise<Payslip[]> {
+    return await prisma.payslip.findMany({
+      where: { employee: { userId } },
+      include: { employee: true, cycle: true, payments: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }
 
 export default new PayslipRepository();

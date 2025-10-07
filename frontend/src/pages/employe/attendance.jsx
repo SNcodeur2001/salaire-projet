@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 const statusColors = {
@@ -21,10 +22,12 @@ const EmployeAttendance = () => {
   const [filteredAttendances, setFilteredAttendances] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [payslips, setPayslips] = useState([]);
 
   useEffect(() => {
     if (user) {
       loadAttendance();
+      loadPayslips();
     }
   }, [user]);
 
@@ -37,6 +40,19 @@ const EmployeAttendance = () => {
       toast({
         title: 'Erreur',
         description: error.message || 'Erreur lors du chargement des présences',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loadPayslips = async () => {
+    try {
+      const data = await apiClient.getMyPayslips();
+      setPayslips(data);
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Erreur lors du chargement des bulletins de paie',
         variant: 'destructive',
       });
     }
@@ -82,85 +98,133 @@ const EmployeAttendance = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-3 gap-6">
-        <Card className="bg-green-50">
-          <CardContent>
-            <p className="text-2xl font-bold text-green-700">{presentCount}</p>
-            <p className="text-green-700 font-semibold">Présent</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-orange-50">
-          <CardContent>
-            <p className="text-2xl font-bold text-orange-700">{lateCount}</p>
-            <p className="text-orange-700 font-semibold">Retard</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-red-50">
-          <CardContent>
-            <p className="text-2xl font-bold text-red-700">{absentCount}</p>
-            <p className="text-red-700 font-semibold">Absent</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="attendance" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="attendance">Présence</TabsTrigger>
+          <TabsTrigger value="salary">Salaire</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Historique de présence</CardTitle>
-          <div className="flex space-x-4">
-            <Input
-              placeholder="Rechercher par date (jj/mm/aaaa)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-xs"
-            />
-            <Select onValueChange={setStatusFilter} value={statusFilter} className="w-48">
-              <SelectTrigger>
-                <SelectValue>{statusFilter === 'ALL' ? 'Tous les statuts' : statusFilter}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tous les statuts</SelectItem>
-                <SelectItem value="PRESENT">Présent</SelectItem>
-                <SelectItem value="LATE">Retard</SelectItem>
-                <SelectItem value="ABSENT">Absent</SelectItem>
-              </SelectContent>
-            </Select>
+        <TabsContent value="attendance" className="space-y-6">
+          <div className="grid grid-cols-3 gap-6">
+            <Card className="bg-green-50">
+              <CardContent>
+                <p className="text-2xl font-bold text-green-700">{presentCount}</p>
+                <p className="text-green-700 font-semibold">Présent</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50">
+              <CardContent>
+                <p className="text-2xl font-bold text-orange-700">{lateCount}</p>
+                <p className="text-orange-700 font-semibold">Retard</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-50">
+              <CardContent>
+                <p className="text-2xl font-bold text-red-700">{absentCount}</p>
+                <p className="text-red-700 font-semibold">Absent</p>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAttendances.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground">
-                    Aucun enregistrement trouvé.
-                  </TableCell>
-                </TableRow>
-              )}
-              {filteredAttendances.map((attendance) => (
-                <TableRow key={attendance.id}>
-                  <TableCell>{new Date(attendance.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        'inline-block rounded-full px-3 py-1 text-xs font-semibold',
-                        statusColors[attendance.status] || 'bg-gray-100 text-gray-800'
-                      )}
-                    >
-                      {attendance.status}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>Historique de présence</CardTitle>
+              <div className="flex space-x-4">
+                <Input
+                  placeholder="Rechercher par date (jj/mm/aaaa)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-xs"
+                />
+                <Select onValueChange={setStatusFilter} value={statusFilter} className="w-48">
+                  <SelectTrigger>
+                    <SelectValue>{statusFilter === 'ALL' ? 'Tous les statuts' : statusFilter}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tous les statuts</SelectItem>
+                    <SelectItem value="PRESENT">Présent</SelectItem>
+                    <SelectItem value="LATE">Retard</SelectItem>
+                    <SelectItem value="ABSENT">Absent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAttendances.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Aucun enregistrement trouvé.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {filteredAttendances.map((attendance) => (
+                    <TableRow key={attendance.id}>
+                      <TableCell>{new Date(attendance.date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            'inline-block rounded-full px-3 py-1 text-xs font-semibold',
+                            statusColors[attendance.status] || 'bg-gray-100 text-gray-800'
+                          )}
+                        >
+                          {attendance.status}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="salary" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historique des salaires</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Période</TableHead>
+                    <TableHead>Salaire brut</TableHead>
+                    <TableHead>Charges</TableHead>
+                    <TableHead>Salaire net</TableHead>
+                    <TableHead>Heures travaillées</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payslips.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        Aucun bulletin de paie trouvé.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {payslips.map((payslip) => (
+                    <TableRow key={payslip.id}>
+                      <TableCell>{payslip.cycle.period}</TableCell>
+                      <TableCell>{payslip.grossSalary.toFixed(2)} €</TableCell>
+                      <TableCell>{payslip.deductions.toFixed(2)} €</TableCell>
+                      <TableCell>{payslip.netSalary.toFixed(2)} €</TableCell>
+                      <TableCell>{payslip.hoursWorked ? payslip.hoursWorked.toFixed(2) : 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

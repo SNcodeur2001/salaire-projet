@@ -1,4 +1,4 @@
-import * as React from "react"
+//  of timport * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
@@ -56,6 +56,8 @@ const Login = () => {
         navigate('/caissier')
       } else if (user.role === 'VIGILE') {
         navigate('/vigile')
+      } else if (user.role === 'EMPLOYE' || user.role === 'EMPLOYEE') {
+        navigate('/employe')
       } else {
         toast({
           title: "Erreur",

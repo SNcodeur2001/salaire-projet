@@ -24,11 +24,11 @@ import CaissierPayslips from "./pages/caissier/payslips.jsx";
 import CaissierPaiements from "./pages/caissier/paiements.jsx";
 import AttendancePage from "./pages/caissier/attendance.jsx";
 import VigileAttendance from "./pages/vigile/attendance.jsx";
+import EmployeDashboard from "./pages/employe/dashboard.jsx";
+import EmployeAttendance from "./pages/employe/attendance.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 const queryClient = new QueryClient();
-
-
 
 const AppContent = () => {
   const { logout, user, entreprise } = useAuth();
@@ -36,14 +36,14 @@ const AppContent = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/', { replace: true });
+    navigate("/", { replace: true });
   };
 
   // Set up API client to handle 401 responses
   React.useEffect(() => {
     const handleUnauthorized = () => {
       logout();
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     };
 
     apiClient.setOnUnauthorized(handleUnauthorized);
@@ -54,104 +54,239 @@ const AppContent = () => {
       <Route path="/" element={<Login />} />
 
       {/* Super Admin Routes */}
-      <Route path="/super-admin" element={
-        <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
-            <SuperAdminDashboard />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/super-admin/entreprises" element={
-        <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
-            <SuperAdminEntreprises />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/super-admin/users" element={
-        <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-          <DashboardLayout userRole="super-admin" userName="Super Admin" entreprise={entreprise} onLogout={handleLogout}>
-            <SuperAdminUsers />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-
+      <Route
+        path="/super-admin"
+        element={
+          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <DashboardLayout
+              userRole="super-admin"
+              userName={user?.email || "Super Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <SuperAdminDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/entreprises"
+        element={
+          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <DashboardLayout
+              userRole="super-admin"
+              userName={user?.email || "Super Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <SuperAdminEntreprises />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/super-admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+            <DashboardLayout
+              userRole="super-admin"
+              userName={user?.email || "Super Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <SuperAdminUsers />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
-      <Route path="/admin" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
-            <AdminDashboard />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/employes" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
-            <AdminEmployees />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/payruns" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
-            <AdminPayruns />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/payslips" element={
-        <ProtectedRoute allowedRoles={['ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
-            <AdminPayslips />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/attendance" element={
-        <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
-          <DashboardLayout userRole="admin" userName="Marie Dubois" entreprise={entreprise} onLogout={handleLogout}>
-            <AdminAttendance />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout
+              userRole="admin"
+              userName={user?.email || "Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AdminDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/employes"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout
+              userRole="admin"
+              userName={user?.email || "Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AdminEmployees />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/payruns"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout
+              userRole="admin"
+              userName={user?.email || "Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AdminPayruns />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/payslips"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <DashboardLayout
+              userRole="admin"
+              userName={user?.email || "Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AdminPayslips />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPER_ADMIN"]}>
+            <DashboardLayout
+              userRole="admin"
+              userName={user?.email || "Admin"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AdminAttendance />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Caissier Routes */}
-      <Route path="/caissier" element={
-        <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
-            <CaissierDashboard />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/caissier/payslips" element={
-        <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
-            <CaissierPayslips />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/caissier/paiements" element={
-        <ProtectedRoute allowedRoles={['CAISSIER']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
-            <CaissierPaiements />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/caissier/attendance" element={
-        <ProtectedRoute allowedRoles={['CAISSIER', 'EMPLOYE', 'EMPLOYEE']}>
-          <DashboardLayout userRole="caissier" userName="Sophie Martin" entreprise={entreprise} onLogout={handleLogout}>
-            <AttendancePage />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
+      <Route
+        path="/caissier"
+        element={
+          <ProtectedRoute allowedRoles={["CAISSIER"]}>
+            <DashboardLayout
+              userRole="caissier"
+              userName={user?.email || "Caissier"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <CaissierDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caissier/payslips"
+        element={
+          <ProtectedRoute allowedRoles={["CAISSIER"]}>
+            <DashboardLayout
+              userRole="caissier"
+              userName={user?.email || "Caissier"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <CaissierPayslips />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caissier/paiements"
+        element={
+          <ProtectedRoute allowedRoles={["CAISSIER"]}>
+            <DashboardLayout
+              userRole="caissier"
+              userName={user?.email || "Caissier"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <CaissierPaiements />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caissier/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["EMPLOYE", "EMPLOYEE"]}>
+            <DashboardLayout
+              userRole="caissier"
+              userName="Sophie Martin"
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <AttendancePage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Vigile Routes */}
-      <Route path="/vigile" element={
-        <ProtectedRoute allowedRoles={['VIGILE']}>
-          <DashboardLayout userRole="vigile" userName="Vigile" entreprise={entreprise} onLogout={handleLogout}>
-            <VigileAttendance />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
+      <Route
+        path="/vigile"
+        element={
+          <ProtectedRoute allowedRoles={["VIGILE"]}>
+            <DashboardLayout
+              userRole="vigile"
+              userName={user?.email || "Vigile"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <VigileAttendance />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employe"
+        element={
+          <ProtectedRoute allowedRoles={["EMPLOYE", "EMPLOYEE"]}>
+            <DashboardLayout
+              userRole="employe"
+              userName={user?.email || "Employe"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <EmployeDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/employe/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["EMPLOYE", "EMPLOYEE"]}>
+            <DashboardLayout
+              userRole="employe"
+              userName={user?.email || "Employe"}
+              entreprise={entreprise}
+              onLogout={handleLogout}
+            >
+              <EmployeAttendance />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

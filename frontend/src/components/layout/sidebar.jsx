@@ -32,10 +32,13 @@ const roleMenuItems = {
     { path: '/caissier', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/caissier/payslips', label: 'Bulletins', icon: FileText },
     { path: '/caissier/paiements', label: 'Paiements', icon: CreditCard },
-    { path: '/caissier/attendance', label: 'Pointage', icon: Clock },
   ],
   'vigile': [
     { path: '/vigile', label: 'Pointage Employés', icon: Clock },
+  ],
+  'employe': [
+    { path: '/employe', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/employe/attendance', label: 'Pointage', icon: Clock },
   ]
 }
 

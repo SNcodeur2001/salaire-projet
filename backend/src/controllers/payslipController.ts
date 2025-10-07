@@ -115,6 +115,20 @@ export class PayslipController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  async getMyPayslips(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Utilisateur non authentifié' });
+      }
+
+      const payslips = await payslipService.getPayslipsByUserId(userId);
+      res.json(payslips);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 export default new PayslipController();

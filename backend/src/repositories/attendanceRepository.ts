@@ -54,6 +54,7 @@ export class AttendanceRepository {
   async listByDate(date: Date): Promise<Attendance[]> {
     return await prisma.attendance.findMany({
       where: { date },
+      include: { employee: true },
       orderBy: { employeeId: 'asc' },
     });
   }

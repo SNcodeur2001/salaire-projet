@@ -66,6 +66,10 @@ export class PayslipService {
 
     generatePayslipPdf(doc, { payslip, entreprise });
   }
+
+  async getPayslipsByUserId(userId: string) {
+    return await payslipRepository.findByUserId(userId);
+  }
 }
 
 export default new PayslipService();

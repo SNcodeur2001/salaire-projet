@@ -2,6 +2,7 @@ import { PayrunStatus } from '@prisma/client';
 import payrunRepository from '../repositories/payrunRepository.js';
 import payslipRepository from '../repositories/payslipRepository.js';
 import employeeRepository from '../repositories/employeeRepository.js';
+import attendanceRepository from '../repositories/attendanceRepository.js';
 
 export class PayrunService {
   async getAllPayruns(entrepriseId: string) {

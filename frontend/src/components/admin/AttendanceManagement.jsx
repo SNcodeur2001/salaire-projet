@@ -119,14 +119,9 @@ export function AttendanceManagement() {
       key: 'employee',
       title: 'Employé',
       render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-            {row.employee?.firstName?.charAt(0).toUpperCase()}{row.employee?.lastName?.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium text-sm">{row.employee?.firstName} {row.employee?.lastName}</p>
-            <p className="text-xs text-muted-foreground">{row.employee?.poste}</p>
-          </div>
+        <div>
+          <p className="font-medium text-sm">{row.employee?.firstName} {row.employee?.lastName}</p>
+          <p className="text-xs text-muted-foreground">{row.employee?.poste}</p>
         </div>
       )
     },
@@ -351,14 +346,9 @@ export function AttendanceManagement() {
             <div className="space-y-3">
               {absentEmployees.map(employee => (
                 <div key={employee.id} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                      {employee.firstName?.charAt(0).toUpperCase()}{employee.lastName?.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
-                      <p className="text-xs text-muted-foreground">{employee.poste}</p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
+                    <p className="text-xs text-muted-foreground">{employee.poste}</p>
                   </div>
                   <Button
                     size="sm"

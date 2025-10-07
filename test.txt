@@ -1,0 +1,1 @@
+{"email":"test.employee@example.com","password":"password123","firstName":"Test","lastName":"Employee","poste":"Développeur","contract":"FIXE","baseSalary":3000} 

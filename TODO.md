@@ -1,14 +1,9 @@
-# TODO: Implement Employee User Creation with Credentials
+# TODO: Improve Employe Interface
 
-## Backend Changes
-- [ ] Extend backend/src/controllers/employeeController.ts createEmployee method to accept email and password, and call authService.register to create user with employee data.
-- [ ] Update backend/src/services/employeeService.ts createEmployee method to support email and password parameters if needed.
-
-## Frontend Changes
-- [ ] Update frontend/src/components/admin/EmployeeForm.jsx to add email and password fields with validation.
-- [ ] Update frontend/src/lib/api.js to send email and password in the createEmployee API call.
-
-## Testing
-- [ ] Test employee creation with email and password.
-- [ ] Test login with the created credentials.
-- [ ] Verify access to employee interface after login.
+## Tasks
+- [x] Add route for /employe/attendance in App.jsx to use EmployeAttendance component
+- [x] Redesign EmployeDashboard.jsx to include:
+  - KPI cards for attendance stats (Present, Late, Absent counts)
+  - Recent payslips summary
+  - Navigation buttons to detailed views (/employe/attendance for attendance, and for salary perhaps keep inline or add route)
+- [x] Test the changes by running the app and navigating to /employe and /employe/attendance

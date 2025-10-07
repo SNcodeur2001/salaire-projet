@@ -25,4 +25,7 @@ router.get('/:id/pdf', requireRole('SUPER_ADMIN', 'ADMIN', 'CAISSIER'), payslipC
 // Send payslip by email
 router.post('/:id/email', requireRole('SUPER_ADMIN', 'ADMIN'), payslipController.sendPayslipEmail.bind(payslipController));
 
+// Get employee's own payslips
+router.get('/my/payslips', requireRole('EMPLOYE'), payslipController.getMyPayslips.bind(payslipController));
+
 export default router;

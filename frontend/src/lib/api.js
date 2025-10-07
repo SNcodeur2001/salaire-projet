@@ -316,6 +316,10 @@ class ApiClient {
     return this.request('/attendances/my-attendance');
   }
 
+  async getMyPayslips() {
+    return this.request('/payslips/my/payslips');
+  }
+
   async getAttendanceByDate(date) {
     return this.request(`/attendances/by-date?date=${date}`);
   }
