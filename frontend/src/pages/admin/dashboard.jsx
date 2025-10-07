@@ -19,6 +19,8 @@ import {
   Clock
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
+import { AreaChart, Area, XAxis, CartesianGrid, Tooltip } from "recharts"
 
 const AdminDashboard = () => {
   const { user } = useAuth()
@@ -93,6 +95,19 @@ const AdminDashboard = () => {
 
     return { total, generated, validated, paid }
   }, [employeesData, payslipsData])
+
+  // Prepare monthly payroll data (group by cycle.period if available)
+  const payrollSeries = React.useMemo(() => {
+    const map = new Map()
+    for (const p of payslipsData) {
+      const key = p?.cycle?.period || 'Actuel'
+      const val = Number(p?.netSalary || 0)
+      map.set(key, (map.get(key) || 0) + val)
+    }
+    const arr = Array.from(map.entries()).map(([period, total]) => ({ period, total }))
+    // Keep last 6 entries for readability
+    return arr.slice(-6)
+  }, [payslipsData])
 
 
 
@@ -283,23 +298,53 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Analytics Chart Placeholder */}
-      <Card>
+      {/* Analytics Chart */}
+      <Card className="card-elevated">
         <CardHeader>
           <CardTitle>Évolution de la Masse Salariale</CardTitle>
           <CardDescription>
-            Comparaison sur les 6 derniers mois
+            Comparaison sur les 6 dernières périodes
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30">
-            <div className="text-center space-y-2">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
-              <p className="text-sm text-muted-foreground">
-                Graphique d'évolution à intégrer
-              </p>
+          {payrollSeries.length === 0 ? (
+            <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30">
+              <div className="text-center space-y-2">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
+                <p className="text-sm text-muted-foreground">Aucune donnée disponible</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="h-64 animate-fade-in">
+              <ChartContainer
+                config={{ payroll: { label: "Masse salariale", color: "hsl(var(--primary))" } }}
+                className="w-full"
+              >
+                <AreaChart data={payrollSeries} margin={{ left: 12, right: 12, top: 10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="fill-payroll" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-payroll)" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="var(--color-payroll)" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                  <XAxis dataKey="period" tickLine={false} axisLine={false} className="text-xs" />
+                  <Tooltip content={<ChartTooltipContent indicator="line" />} />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    stroke="var(--color-payroll)"
+                    strokeWidth={2}
+                    fill="url(#fill-payroll)"
+                    activeDot={{ r: 4 }}
+                    dot={{ r: 2 }}
+                    isAnimationActive
+                  />
+                </AreaChart>
+                <ChartLegendContent className="pt-2" payload={[{ value: "Masse salariale", color: "hsl(var(--primary))", dataKey: "payroll" }]} />
+              </ChartContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

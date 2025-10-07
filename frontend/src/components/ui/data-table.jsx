@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 const DataTable = React.forwardRef(
   ({ columns, data, className, emptyMessage = "Aucune donnée disponible", ...props }, ref) => {
     return (
-      <div className="w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
         <table
           ref={ref}
           className={cn("data-table", className)}
@@ -34,7 +34,7 @@ const DataTable = React.forwardRef(
               </tr>
             ) : (
               data.map((row, index) => (
-                <tr key={index}>
+                <tr key={index} className="transition-colors hover:bg-muted/30">
                   {columns.map((column) => (
                     <td
                       key={column.key}

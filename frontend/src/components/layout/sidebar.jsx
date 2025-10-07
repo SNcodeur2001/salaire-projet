@@ -67,14 +67,14 @@ const Sidebar = React.forwardRef(({
     <div
       ref={ref}
       className={cn(
-        "flex h-screen flex-col border-r border-border bg-card transition-all duration-300",
-        isCollapsed ? "w-16" : "w-64"
+        "flex h-screen flex-col border-r border-border/50 bg-gradient-to-b from-card to-card/95 backdrop-blur-xl transition-[width] duration-300 ease-in-out shadow-xl",
+        isCollapsed ? "w-16" : "w-72"
       )}
     >
       {/* Header */}
-      <div className="flex h-16 items-center justify-between border-b border-border px-4">
+      <div className="flex h-20 items-center justify-between border-b border-border/50 px-6 sticky top-0 z-10 bg-gradient-to-br from-card/95 via-card/90 to-card/95 backdrop-blur-xl shadow-sm">
         {!isCollapsed && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 animate-fade-in">
             {entreprise?.logo ? (
               <img
                 src={entreprise.logo}
@@ -83,18 +83,21 @@ const Sidebar = React.forwardRef(({
                 style={{ backgroundColor: entreprise.color || '#3b82f6' }}
               />
             ) : (
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow"
-                style={{ backgroundColor: entreprise?.color || undefined }}
-              >
-                <Calculator className="h-4 w-4 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/30 blur-lg rounded-xl" />
+                <div
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary to-primary-glow shadow-lg"
+                  style={{ backgroundColor: entreprise?.color || undefined }}
+                >
+                  <Calculator className="h-5 w-5 text-white" />
+                </div>
               </div>
             )}
             <div className="flex flex-col">
-              <span className="text-sm font-semibold gradient-text">
+              <span className="text-base font-bold gradient-text">
                 {entreprise?.name || 'GES-Salary'}
               </span>
-              <span className="text-xs text-muted-foreground">{getRoleDisplayName(userRole)}</span>
+              <span className="text-xs text-muted-foreground font-medium">{getRoleDisplayName(userRole)}</span>
             </div>
           </div>
         )}
@@ -113,10 +116,9 @@ const Sidebar = React.forwardRef(({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.path ||
-            (item.path !== `/${userRole}` && location.pathname.startsWith(item.path))
+          const isActive = location.pathname === item.path;
 
           return (
             <NavLink
@@ -137,16 +139,19 @@ const Sidebar = React.forwardRef(({
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border/50 p-4 bg-gradient-to-t from-muted/30 to-transparent">
         {!isCollapsed && (
-          <div className="mb-3 rounded-lg bg-muted/50 p-3">
+          <div className="mb-3 rounded-xl bg-gradient-to-br from-muted/80 to-muted/40 p-4 border border-border/50 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                {userName.charAt(0).toUpperCase()}
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-md rounded-full" />
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-glow text-primary-foreground text-sm font-bold shadow-lg">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userName}</p>
-                <p className="text-xs text-muted-foreground">{getRoleDisplayName(userRole)}</p>
+                <p className="text-sm font-semibold truncate">{userName}</p>
+                <p className="text-xs text-muted-foreground font-medium">{getRoleDisplayName(userRole)}</p>
               </div>
             </div>
           </div>
@@ -156,12 +161,12 @@ const Sidebar = React.forwardRef(({
           variant="ghost"
           onClick={onLogout}
           className={cn(
-            "w-full justify-start text-muted-foreground hover:text-destructive",
+            "w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-200",
             isCollapsed && "justify-center"
           )}
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3">Déconnexion</span>}
+          {!isCollapsed && <span className="ml-3 font-medium">Déconnexion</span>}
         </Button>
       </div>
     </div>

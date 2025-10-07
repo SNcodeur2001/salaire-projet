@@ -78,29 +78,41 @@ const Login = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-primary/5 p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background decorations */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full blur-3xl opacity-30 animate-pulse" style={{ background: "radial-gradient(circle at 30% 30%, hsl(var(--primary)), transparent 70%)", animationDuration: "4s" }} />
+          <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full blur-3xl opacity-30 animate-pulse" style={{ background: "radial-gradient(circle at 70% 70%, hsl(var(--primary-glow)), transparent 70%)", animationDuration: "6s", animationDelay: "1s" }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-20 animate-pulse" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.4), transparent 70%)", animationDuration: "5s", animationDelay: "2s" }} />
+        </div>
+      </div>
+
+      <div className="w-full max-w-md space-y-8 animate-slide-up">
         {/* Logo & Title */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-lg">
-              <Calculator className="h-8 w-8 text-white" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-3xl animate-pulse" style={{ animationDuration: "3s" }} />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary via-primary to-primary-glow shadow-2xl">
+                <Calculator className="h-10 w-10 text-white" />
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold gradient-text">GES-Salary</h1>
-            <p className="text-muted-foreground">
-              Plateforme de gestion des salaires
+          <div className="space-y-3">
+            <h1 className="text-4xl font-bold gradient-text">GES-Salary</h1>
+            <p className="text-muted-foreground text-base font-medium">
+              Plateforme professionnelle de gestion des salaires
             </p>
           </div>
         </div>
 
         {/* Login Form */}
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Connexion</CardTitle>
-            <CardDescription>
-              Entrez vos informations pour vous connecter à votre compte
+        <Card className="glass-card shadow-2xl border-white/30">
+          <CardHeader className="space-y-2 pb-6">
+            <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
+            <CardDescription className="text-base">
+              Entrez vos informations pour accéder à votre espace
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -111,11 +123,12 @@ const Login = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Adresse email</FormLabel>
+                      <FormLabel className="text-sm font-semibold">Adresse email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="votre@email.com"
+                          className="h-11"
                           {...field}
                         />
                       </FormControl>
@@ -128,13 +141,13 @@ const Login = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mot de passe</FormLabel>
+                      <FormLabel className="text-sm font-semibold">Mot de passe</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="h-11 pr-10"
+                            className="h-11 pr-10 transition-all focus:shadow-md"
                             {...field}
                           />
                           <button
@@ -159,19 +172,19 @@ const Login = () => {
                   type="submit"
                   variant="gradient"
                   size="lg"
-                  className="w-full"
+                  className="w-full mt-2 shadow-lg hover:shadow-xl"
                   loading={loading}
-                  icon={!loading ? <LogIn className="h-4 w-4" /> : undefined}
+                  icon={!loading ? <LogIn className="h-5 w-5" /> : undefined}
                 >
-                  {loading ? "Connexion..." : "Se connecter"}
+                  {loading ? "Connexion en cours..." : "Se connecter"}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
-        <div className="text-center text-sm text-muted-foreground">
-          <p>© 2024 GES-Salary. Tous droits réservés.</p>
+        <div className="text-center text-sm text-muted-foreground font-medium">
+          <p>© 2024 GES-Salary · Tous droits réservés</p>
         </div>
       </div>
     </div>
