@@ -29,8 +29,7 @@ export class PaymentController {
   async getPaymentReceipt(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const receipt = await paymentService.getPaymentReceipt(id);
-      res.json(receipt);
+      await paymentService.getPaymentReceipt(id, res);
     } catch (error: any) {
       res.status(404).json({ error: error.message });
     }

@@ -38,17 +38,20 @@ export class PayslipController {
   async updatePayslip(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { grossSalary, deductions, netSalary, notes } = req.body;
+      const { grossSalary, deductions, netSalary, hoursWorked, notes } = req.body;
 
       // Validation détaillée
-      if (grossSalary !== undefined && (typeof grossSalary !== 'number' || grossSalary <= 0)) {
-        return res.status(400).json({ error: 'Le salaire brut doit être un nombre positif' });
+      if (grossSalary !== undefined && (typeof grossSalary !== 'number' || grossSalary < 0)) {
+        return res.status(400).json({ error: 'Le salaire brut doit être un nombre positif ou nul' });
       }
       if (deductions !== undefined && (typeof deductions !== 'number' || deductions < 0)) {
         return res.status(400).json({ error: 'Les charges ne peuvent pas être négatives' });
       }
-      if (netSalary !== undefined && (typeof netSalary !== 'number' || netSalary <= 0)) {
-        return res.status(400).json({ error: 'Le salaire net doit être un nombre positif' });
+      if (netSalary !== undefined && (typeof netSalary !== 'number' || netSalary < 0)) {
+        return res.status(400).json({ error: 'Le salaire net doit être un nombre positif ou nul' });
+      }
+      if (hoursWorked !== undefined && (typeof hoursWorked !== 'number' || hoursWorked < 0)) {
+        return res.status(400).json({ error: 'Les heures travaillées ne peuvent pas être négatives' });
       }
       if (notes !== undefined && typeof notes !== 'string') {
         return res.status(400).json({ error: 'Les notes doivent être une chaîne de caractères' });

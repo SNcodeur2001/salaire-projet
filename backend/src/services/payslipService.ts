@@ -21,6 +21,7 @@ export class PayslipService {
     grossSalary?: number;
     deductions?: number;
     netSalary?: number;
+    hoursWorked?: number;
   }) {
     const payslip = await this.getPayslipById(id, entrepriseId);
     // Business logic: can only update if cycle is BROUILLON

@@ -20,9 +20,10 @@ import { DialogClose } from "@/components/ui/dialog"
 
 // Validation schema for payslip adjustments
 const payslipSchema = z.object({
-  grossSalary: z.coerce.number().positive("Le salaire brut doit être positif"),
+  grossSalary: z.coerce.number().min(0, "Le salaire brut doit être positif ou nul"),
   deductions: z.coerce.number().min(0, "Les charges ne peuvent pas être négatives"),
-  netSalary: z.coerce.number().positive("Le salaire net doit être positif"),
+  netSalary: z.coerce.number().min(0, "Le salaire net doit être positif ou nul"),
+  hoursWorked: z.coerce.number().min(0, "Les heures travaillées ne peuvent pas être négatives").optional(),
   notes: z.string().optional(),
 })
 
@@ -114,6 +115,20 @@ export function PayslipForm({ defaultValues = {}, onSuccess, isEdit = false, onC
               <FormLabel>Salaire Net (€)</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="2500" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="hoursWorked"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Heures Travaillées</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" placeholder="160" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

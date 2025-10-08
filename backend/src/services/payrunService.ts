@@ -3,6 +3,7 @@ import payrunRepository from '../repositories/payrunRepository.js';
 import payslipRepository from '../repositories/payslipRepository.js';
 import employeeRepository from '../repositories/employeeRepository.js';
 import attendanceRepository from '../repositories/attendanceRepository.js';
+import { aggregateHoursWorked, getAttendancesForPeriod } from '../utils/attendanceUtils.js';
 
 export class PayrunService {
   async getAllPayruns(entrepriseId: string) {
@@ -29,6 +30,9 @@ export class PayrunService {
     // Create payrun
     const payrun = await payrunRepository.create(data);
 
+    // Parse period for calculations
+    const [year, month] = data.period.split('-').map(Number);
+
     // Auto-create payslips for active employees
     const activeEmployees = await employeeRepository.findAllActive(data.entrepriseId);
     for (const employee of activeEmployees) {
@@ -38,14 +42,15 @@ export class PayrunService {
 
       if (employee.contract === 'JOURNALIER') {
         // Calculate number of days in the month
-        const [year, month] = data.period.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
         daysWorked = daysInMonth;
         grossSalary = employee.baseSalary * daysInMonth;
       } else if (employee.contract === 'HONORAIRE') {
-        // Default to 0 hours, can be updated later
-        hoursWorked = 0;
-        grossSalary = 0;
+        // Calculate hours worked from attendance
+        const employeeAttendances = await attendanceRepository.listByEmployee(employee.id);
+        const periodAttendances = getAttendancesForPeriod(employeeAttendances, year, month);
+        hoursWorked = aggregateHoursWorked(periodAttendances);
+        grossSalary = hoursWorked * employee.baseSalary; // Assuming baseSalary is hourly rate
       } else if (employee.contract === 'FIXE') {
         // Use baseSalary as is
         grossSalary = employee.baseSalary;

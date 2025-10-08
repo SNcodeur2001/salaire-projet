@@ -239,6 +239,27 @@ class ApiClient {
     return this.request(`/payments/${id}/receipt`);
   }
 
+  async downloadPaymentReceipt(paymentId) {
+    // This will trigger a download
+    const response = await fetch(`${this.baseURL}/payments/${paymentId}/receipt`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Erreur lors du téléchargement du reçu');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recu-paiement-${paymentId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
   // Payslips additional endpoints
   async getPayslipPayments(payslipId) {
     return this.request(`/payslips/${payslipId}/payments`);

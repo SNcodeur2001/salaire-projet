@@ -315,12 +315,12 @@ const AdminDashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="h-64 animate-fade-in">
+            <div className="h-64 animate-fade-in overflow-hidden">
               <ChartContainer
                 config={{ payroll: { label: "Masse salariale", color: "hsl(var(--primary))" } }}
                 className="w-full"
               >
-                <AreaChart data={payrollSeries} margin={{ left: 12, right: 12, top: 10, bottom: 0 }}>
+                <AreaChart data={payrollSeries} margin={{ left: 12, right: 12, top: 10, bottom: 20 }}>
                   <defs>
                     <linearGradient id="fill-payroll" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--color-payroll)" stopOpacity={0.28} />
@@ -328,7 +328,16 @@ const AdminDashboard = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                  <XAxis dataKey="period" tickLine={false} axisLine={false} className="text-xs" />
+                  <XAxis
+                    dataKey="period"
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-xs"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval={0}
+                  />
                   <Tooltip content={<ChartTooltipContent indicator="line" />} />
                   <Area
                     type="monotone"

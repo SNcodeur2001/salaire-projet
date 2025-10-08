@@ -42,10 +42,50 @@ export class PaymentService {
     return payment;
   }
 
-  async getPaymentReceipt(id: string) {
+  async getPaymentReceipt(id: string, res: any) {
     const payment = await this.getPaymentById(id);
-    // Simulate PDF URL
-    return { receiptUrl: `https://example.com/receipts/${id}.pdf` };
+
+    // Get full payment details with relations
+    const paymentWithDetails = await prisma.payment.findUnique({
+      where: { id },
+      include: {
+        payslip: {
+          include: {
+            employee: true,
+            cycle: true
+          }
+        },
+        caissier: true
+      }
+    });
+
+    if (!paymentWithDetails) {
+      throw new Error('Paiement non trouvé');
+    }
+
+    // Get entreprise info
+    const entreprise = await prisma.entreprise.findUnique({
+      where: { id: paymentWithDetails.payslip.employee.entrepriseId }
+    });
+
+    if (!entreprise) {
+      throw new Error('Entreprise non trouvée');
+    }
+
+    // Generate PDF
+    const PDFDocument = (await import('pdfkit')).default;
+    const doc = new PDFDocument();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="recu-paiement-${id}.pdf"`);
+
+    doc.pipe(res);
+
+    const { generatePaymentReceiptPdf } = await import('../utils/pdfGenerator.js');
+    generatePaymentReceiptPdf(doc, {
+      payment: paymentWithDetails,
+      entreprise
+    });
   }
 
   async getPayments(filters: { entrepriseId?: string } = {}) {

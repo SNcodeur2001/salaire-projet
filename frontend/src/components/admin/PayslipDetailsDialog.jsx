@@ -66,6 +66,15 @@ export function PayslipDetailsDialog({ payslipId, open, onOpenChange }) {
     window.open(`/api/payslips/${payslipId}/pdf`, '_blank')
   }
 
+  const handleDownloadReceipt = async (paymentId) => {
+    try {
+      await apiClient.downloadPaymentReceipt(paymentId)
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+      // You could add a toast notification here
+    }
+  }
+
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,6 +163,12 @@ export function PayslipDetailsDialog({ payslipId, open, onOpenChange }) {
                   <span>Salaire brut</span>
                   <span className="font-medium">€{payslip.grossSalary?.toLocaleString()}</span>
                 </div>
+                {payslip.employee.contract === 'HONORAIRE' && payslip.hoursWorked && (
+                  <div className="flex justify-between">
+                    <span>Heures travaillées</span>
+                    <span className="font-medium">{payslip.hoursWorked.toFixed(2)}h</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-destructive">
                   <span>Charges sociales</span>
                   <span>-€{payslip.deductions?.toLocaleString()}</span>
@@ -176,19 +191,44 @@ export function PayslipDetailsDialog({ payslipId, open, onOpenChange }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {payments.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 border rounded">
-                      <div className="flex items-center space-x-3">
-                        <CheckCircle className="h-4 w-4 text-success" />
+                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        </div>
                         <div>
-                          <p className="font-medium">€{payment.amount?.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(payment.createdAt).toLocaleDateString('fr-FR')}
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">
+                            €{payment.amount?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {new Date(payment.paymentDate || payment.createdAt).toLocaleDateString('fr-FR', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wide">
+                            {payment.mode} • Réf: {payment.id.slice(-8)}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="default">Payé</Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
+                          Payé
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadReceipt(payment.id)}
+                          className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-950"
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Reçu
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
